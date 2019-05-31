@@ -57,6 +57,21 @@ my Strongest.
 ```
 
 ```
+Closely monitoring,
+world at the United Nations.
+Anybody entering,
+walking all of my nominations,
+Baldwin impersonation,
+are coming together w/one simple,
+Republican Nomination,
+GREATNESS as a shining example,
+no Russian,
+a discussion,
+here: Join me in Mobile,
+'President Trump Congratulates Exxon Mobil.
+```
+
+```
 Us the weakest,
 the speech on immigration last,
 are so focused,
@@ -67,19 +82,6 @@ Reserve has incessantly,
 The problem with banker Jamie Dimon,
 serving solitary,
 rebuilt military.	
-```
-
-```
-Plan For Washington,
-The Democrats, who know Steel,
-Sandman & Covington,
-the system to illegally steal,
-appalled that somebody,
-million phone calls and text messages.
-That affects everybody,
-hostages, or gave five terroist hostages,
-our Trade,
-all betrayed.
 ```
 
 ```
