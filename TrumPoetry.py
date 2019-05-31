@@ -1,8 +1,8 @@
 import re
 from random import randint
 
-dict_filepath = "./cmu_pronouncing_dictionary.txt"
-raw_input_text_filepath  = "./trump_tweets_text_only.txt"
+dict_filepath = "cmu_pronouncing_dictionary.txt"
+raw_input_text_filepath  = "trump_tweets_text_only.txt"
 limit_text_lines = 10000
 verse_lengths = [3, 5, 3, 6, 2]
 
