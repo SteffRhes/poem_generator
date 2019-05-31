@@ -34,57 +34,64 @@ python3 TrumPoetry.py
 
 Here are some of my personal favorites:
 
-> Needs the competition!
-> Will the FBI ever recover,
-> sent a petition,
-> try to distract and cover,
-> praised FBI Director,
-> decision What is our country coming,
-> Comey, the Inspector,
-> Democrats are in danger of becoming,
-> time biggest,
-> my Strongest.
-> 
-> Us the weakest,
-> the speech on immigration last,
-> are so focused,
-> Brutal and Extended Cold Blast,
-> Championship teams recently,
-> commitment to our men and women,
-> Reserve has incessantly,
-> The problem with banker Jamie Dimon,
-> serving solitary,
-> rebuilt military.	
-> 
-> Plan For Washington,
-> The Democrats, who know Steel,
-> Sandman & Covington,
-> the system to illegally steal,
-> appalled that somebody,
-> million phone calls and text messages.
-> That affects everybody,
-> hostages, or gave five terroist hostages,
-> our Trade,
-> all betrayed.
-> 
-> Children, Don, Eric,
-> tough on Crime and Borders,
-> get cheaper generic,
-> remember, he took his orders,
-> reviews and polls,
-> My Campaign for President was conclusively,
-> the Democrat pols,
-> a brighter future, we cannot exclusively,
-> of drugs,
-> prayer rugs.
+```
+Needs the competition!
+Will the FBI ever recover,
+sent a petition,
+try to distract and cover,
+praised FBI Director,
+decision What is our country coming,
+Comey, the Inspector,
+Democrats are in danger of becoming,
+time biggest,
+my Strongest.
+```
 
+```
+Us the weakest,
+the speech on immigration last,
+are so focused,
+Brutal and Extended Cold Blast,
+Championship teams recently,
+commitment to our men and women,
+Reserve has incessantly,
+The problem with banker Jamie Dimon,
+serving solitary,
+rebuilt military.	
+```
+
+```
+Plan For Washington,
+The Democrats, who know Steel,
+Sandman & Covington,
+the system to illegally steal,
+appalled that somebody,
+million phone calls and text messages.
+That affects everybody,
+hostages, or gave five terroist hostages,
+our Trade,
+all betrayed.
+```
+
+```
+Children, Don, Eric,
+tough on Crime and Borders,
+get cheaper generic,
+remember, he took his orders,
+reviews and polls,
+My Campaign for President was conclusively,
+the Democrat pols,
+a brighter future, we cannot exclusively,
+of drugs,
+prayer rugs.
+```
 
 
 #### Dependencies & Third parties
 
-The scripts runs on python3, no other code dependencies to my knowledge.
+The scripts runs on python3, no other code dependencies exist to my knowledge.
 
-The word-to-phoneme dictionary is provided by the Carnegie Mellon University and available here:
+The word-to-phoneme dictionary is provided by the Carnegie Mellon University and is available here:
 http://www.speech.cs.cmu.edu/cgi-bin/cmudict
 
 The raw tweets from Trump in csv form were provided by the TrumpTwitter Archive:
