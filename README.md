@@ -2,7 +2,7 @@
 
 ### TrumPoetry
 
-A small poem generating script, written for the Code Poetry Slam 2019 (https://codepoetry.at/).
+A small poem generating script, written for the austrian Code Poetry Slam 2019 (https://codepoetry.at/).
 
 The script produces short poems on the basis of Trump's Tweets, by juggling phrases randomly together until some rhyming verses come out.
 
@@ -89,7 +89,7 @@ prayer rugs.
 
 #### Dependencies & Third parties
 
-The scripts runs on python3, no other code dependencies exist to my knowledge.
+The scripts runs on vanilla python3, no other code dependencies exist to my knowledge.
 
 The word-to-phoneme dictionary is provided by the Carnegie Mellon University and is available here:
 http://www.speech.cs.cmu.edu/cgi-bin/cmudict
