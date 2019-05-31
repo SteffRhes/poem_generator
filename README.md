@@ -89,16 +89,12 @@ on Republicans.
 ```
 
 ```
-Children, Don, Eric,
-tough on Crime and Borders,
-get cheaper generic,
-remember, he took his orders,
-reviews and polls,
-My Campaign for President was conclusively,
-the Democrat pols,
-a brighter future, we cannot exclusively,
-of drugs,
-prayer rugs.
+Not even an apology to millions,
+After having written many best selling,
+will soon be taking in Billions,
+Prime Minister of Australia for telling,
+a crime that was committed,
+you will not be admitted.
 ```
 
 
