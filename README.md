@@ -72,16 +72,20 @@ here: Join me in Mobile,
 ```
 
 ```
-Us the weakest,
-the speech on immigration last,
-are so focused,
-Brutal and Extended Cold Blast,
-Championship teams recently,
-commitment to our men and women,
-Reserve has incessantly,
-The problem with banker Jamie Dimon,
-serving solitary,
-rebuilt military.	
+Hillary Clinton,
+automobile executives concerning,
+from mountain,
+equipment after learning,
+be appointed,
+through their borders,
+Leaders pointed,
+sign Executive Orders,
+A wonderful,
+truly the Opposition,
+a powerful,
+much better position,
+all Americans,
+on Republicans.
 ```
 
 ```
