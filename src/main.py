@@ -1,11 +1,14 @@
 import re
 from random import randint
+from transformers import pipeline
 
 
+pipe = pipeline("text-classification", model="finiteautomata/bertweet-base-sentiment-analysis")
 dict_filepath = "../data/cmu_pronouncing_dictionary.txt"
 raw_input_text_filepath  = "../data/cleaned_text_only.txt"
 limit_text_lines = 10000
 verse_lengths = [3, 5, 3, 6, 2]
+SENTIMENT = ["POS"]
 
 
 def build_word_to_phoneme(dict_filepath):
@@ -39,7 +42,7 @@ def parse_input_text(raw_input_text_filepath, limit_text_lines):
     return list_words
 
 
-def create_random_verse_pair(dict_word_to_phonemes, list_words, verse_length):
+def create_random_verse_pair(dict_word_to_phonemes, list_words, verse_length, sent_verse_a, sent_verse_b):
 
     def search_for_rhymes(word_a, list_words, dict_word_to_phonemes):
         result_indices = []
@@ -79,15 +82,23 @@ def create_random_verse_pair(dict_word_to_phonemes, list_words, verse_length):
 
         return result_indices
 
+    def find_random_verse(verse_length, list_words, sentiment_target):
+        found_random_verse = False
+        while not found_random_verse:
+            random_index = randint(verse_length, len(list_words) - 1)
+            random_word = list_words[random_index]
+            if random_word[-1] == "." or random_word[-1] == "!" or random_word[-1] == "?" or random_word[-1] == ",":
+                random_word = random_word[:-1]
+            verse_a = " ".join([ list_words[i] for i in range(random_index-verse_length+1, random_index+1) ])
+            if pipe(verse_a)[0]["label"] == sentiment_target:
+                found_random_verse = True
+        return verse_a, random_word
+
     found = False
     verse_a = ""
     verse_b = ""
     while not found:
-        random_index = randint(verse_length, len(list_words) - 1)
-        random_word = list_words[random_index]
-        if random_word[-1] == "." or random_word[-1] == "!" or random_word[-1] == "?" or random_word[-1] == ",":
-            random_word = random_word[:-1]
-        verse_a = " ".join([ list_words[i] for i in range(random_index-verse_length+1, random_index+1) ])
+        verse_a, random_word = find_random_verse(verse_length, list_words, sent_verse_a)
         if not any( char in verse_a[:-1] for char in [". ", "! ", "? ", ] ) and random_word.upper() in dict_word_to_phonemes:
             result_indices = search_for_rhymes(random_word, list_words, dict_word_to_phonemes)
             if result_indices:
@@ -95,7 +106,11 @@ def create_random_verse_pair(dict_word_to_phonemes, list_words, verse_length):
                 difference = length_verse_a
                 for result_index in result_indices:
                     verse_b_tmp = " ".join([ list_words[i] for i in range(result_index-verse_length+1, result_index+1) ])
-                    if not any( char in verse_b_tmp[:-1] for char in [". ", "! ", "? ", ] ):
+                    sent_verse_b_real = pipe(verse_b_tmp)[0]["label"]
+                    if (
+                        not any( char in verse_b_tmp[:-1] for char in [". ", "! ", "? ", ] )
+                        and sent_verse_b_real == sent_verse_b
+                    ):
                         length_verse_b = len(verse_b_tmp)
                         difference_tmp = abs(length_verse_a - length_verse_b)
                         if difference_tmp < difference:
@@ -154,11 +169,9 @@ def clean_and_print_verses(verses):
 def main(dict_filepath, raw_input_text_filepath, verse_lengths, limit_text_lines=None):
     dict_word_to_phonemes = build_word_to_phoneme(dict_filepath)
     list_words = parse_input_text(raw_input_text_filepath, limit_text_lines)
-    verses = [
-        create_random_verse_pair(dict_word_to_phonemes, list_words, vl) 
-        for vl in 
-        verse_lengths
-    ]
+    verses = []
+    for vl in verse_lengths:
+        verses.append(create_random_verse_pair(dict_word_to_phonemes, list_words, vl, "POS", "NEG"))
     clean_and_print_verses(verses)
 
 
