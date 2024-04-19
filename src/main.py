@@ -3,7 +3,7 @@ from random import randint
 
 
 dict_filepath = "../data/cmu_pronouncing_dictionary.txt"
-raw_input_text_filepath  = "../data/raw/twitter/trump_tweets_unknown_source_text_only.txt"
+raw_input_text_filepath  = "../data/cleaned_text_only.txt"
 limit_text_lines = 10000
 verse_lengths = [3, 5, 3, 6, 2]
 
@@ -154,7 +154,11 @@ def clean_and_print_verses(verses):
 def main(dict_filepath, raw_input_text_filepath, verse_lengths, limit_text_lines=None):
     dict_word_to_phonemes = build_word_to_phoneme(dict_filepath)
     list_words = parse_input_text(raw_input_text_filepath, limit_text_lines)
-    verses = [ create_random_verse_pair(dict_word_to_phonemes, list_words, vl) for vl in verse_lengths ]
+    verses = [
+        create_random_verse_pair(dict_word_to_phonemes, list_words, vl) 
+        for vl in 
+        verse_lengths
+    ]
     clean_and_print_verses(verses)
 
 
