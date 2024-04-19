@@ -3,6 +3,7 @@ import sys
 
 
 csv.field_size_limit(sys.maxsize)
+PUNCTUATION_MARKS = [".", ",", "!", "?", "…"]
 
 
 def main():
@@ -12,7 +13,10 @@ def main():
     with open("../data/raw/twitter/trump_tweets.csv", "r") as f:
         csv_reader = csv.reader(f)
         for row in csv_reader:
-            texts_twitter.append(row[1].replace("\n", ""))
+            text = row[1].replace("\n", "")
+            if text[-1] not in PUNCTUATION_MARKS:
+                text += "."
+            texts_twitter.append(text)
     print(f"number of twitter texts: {len(texts_twitter)}")
 
     # truth_social
@@ -25,8 +29,10 @@ def main():
         search_str = "https://truthsocial.com/@realDonaldTrump/posts"
         for row in f:
             if search_str in row:
-                text = row.split(search_str)[0].split("\t")[-3]
-                texts_truth.append(text.replace("\n", ""))
+                text = row.split(search_str)[0].split("\t")[-3].replace("\n", "")
+                if text[-1] not in PUNCTUATION_MARKS:
+                    text += "."
+                texts_truth.append(text)
     print(f"number of truth social texts: {len(texts_truth)}")
 
     # write
