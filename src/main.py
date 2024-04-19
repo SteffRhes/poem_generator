@@ -7,8 +7,9 @@ pipe = pipeline("text-classification", model="finiteautomata/bertweet-base-senti
 dict_filepath = "../data/cmu_pronouncing_dictionary.txt"
 raw_input_text_filepath  = "../data/cleaned_text_only.txt"
 limit_text_lines = 10000
-verse_lengths = [3, 5, 3, 6, 2]
+verse_lengths = [50, 50, 22]
 SENTIMENT = ["POS"]
+PUNCTUATION_MARKS = [".", ",", "!", "?", "…"]
 
 
 def build_word_to_phoneme(dict_filepath):
@@ -82,43 +83,55 @@ def create_random_verse_pair(dict_word_to_phonemes, list_words, verse_length, se
 
         return result_indices
 
-    def find_random_verse(verse_length, list_words, sentiment_target):
+    def find_random_verse(verse_length, list_words, dict_word_to_phonemes, sentiment_target):
         found_random_verse = False
         while not found_random_verse:
-            random_index = randint(verse_length, len(list_words) - 1)
+            random_index = randint(0, len(list_words) - 1)
             random_word = list_words[random_index]
-            if random_word[-1] == "." or random_word[-1] == "!" or random_word[-1] == "?" or random_word[-1] == ",":
-                random_word = random_word[:-1]
-            verse_a = " ".join([ list_words[i] for i in range(random_index-verse_length+1, random_index+1) ])
-            if pipe(verse_a)[0]["label"] == sentiment_target:
-                found_random_verse = True
+            if random_word.upper() in dict_word_to_phonemes and random_word[-1] in PUNCTUATION_MARKS:
+                verse_a = random_word
+                found_beginning = False
+                i = random_index
+                while not found_beginning:
+                    i -= 1
+                    new_word = list_words[i]
+                    verse_a_potential = new_word + " " + verse_a
+                    if not new_word[-1] in PUNCTUATION_MARKS and len(verse_a_potential) < verse_length:
+                        verse_a = verse_a_potential
+                    else:
+                        found_beginning = True
+                # verse_a = " ".join([ list_words[i] for i in range(random_index-verse_length+1, random_index+1) ])
+                sent_pred= pipe(verse_a)[0]
+                if sent_pred["label"] == sentiment_target and sent_pred["score"] > 0.8:
+                    found_random_verse = True
+        print(f"found verse_a: {verse_a}")
         return verse_a, random_word
 
     found = False
     verse_a = ""
     verse_b = ""
     while not found:
-        verse_a, random_word = find_random_verse(verse_length, list_words, sent_verse_a)
-        if not any( char in verse_a[:-1] for char in [". ", "! ", "? ", ] ) and random_word.upper() in dict_word_to_phonemes:
-            result_indices = search_for_rhymes(random_word, list_words, dict_word_to_phonemes)
-            if result_indices:
-                length_verse_a = len(verse_a)
-                difference = length_verse_a
-                for result_index in result_indices:
-                    verse_b_tmp = " ".join([ list_words[i] for i in range(result_index-verse_length+1, result_index+1) ])
-                    sent_verse_b_real = pipe(verse_b_tmp)[0]["label"]
-                    if (
-                        not any( char in verse_b_tmp[:-1] for char in [". ", "! ", "? ", ] )
-                        and sent_verse_b_real == sent_verse_b
-                    ):
-                        length_verse_b = len(verse_b_tmp)
-                        difference_tmp = abs(length_verse_a - length_verse_b)
-                        if difference_tmp < difference:
-                            difference = difference_tmp
-                            verse_b = verse_b_tmp
+        verse_a, random_word = find_random_verse(verse_length, list_words, dict_word_to_phonemes, sent_verse_a)
+        result_indices = search_for_rhymes(random_word, list_words, dict_word_to_phonemes)
+        if result_indices:
+            length_verse_a = len(verse_a)
+            difference = length_verse_a
+            for result_index in result_indices:
+                # TODO verse_length
+                verse_b_tmp = " ".join([ list_words[i] for i in range(result_index-verse_length+1, result_index+1) ])
+                sent_verse_b_real = pipe(verse_b_tmp)[0]["label"]
+                if (
+                    not any( char in verse_b_tmp[:-1] for char in [". ", "! ", "? ", ] )
+                    and sent_verse_b_real == sent_verse_b
+                ):
+                    length_verse_b = len(verse_b_tmp)
+                    difference_tmp = abs(length_verse_a - length_verse_b)
+                    if difference_tmp < difference:
+                        difference = difference_tmp
+                        verse_b = verse_b_tmp
 
-                if verse_b != "":
-                    found = True
+            if verse_b != "":
+                found = True
 
     return (verse_a, verse_b)
 
