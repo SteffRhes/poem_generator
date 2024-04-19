@@ -1,0 +1,8 @@
+
+services:
+  trumpoetry:
+    build: .
+    volumes:
+      - ./:/home/docker_user/app/
+    working_dir: /home/docker_user/app/src/
+
