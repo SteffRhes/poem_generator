@@ -10,7 +10,7 @@ LIMIT_TEXT_LINES = None
 DICT_WORD_TO_PHONEMES = {}
 INDEX_VERSES = {}
 PUNCTUATION_MARKS = [".", ",", "!", "?", "…"]
-IS_TESTING = False
+IS_TESTING = True
 if IS_TESTING:
     # random.seed(42)
     PIPE = None
@@ -116,11 +116,10 @@ def find_matching_verses(verse_length, verse_dict_a):
     
     def not_contains_identical_words(word_list_a, word_list_b):
         limit = 3
-        if len(word_list_a) >= limit and len(word_list_b) >= limit:
-            for i in range(limit):
-                for j in range(limit):
-                    if word_list_a[i] == word_list_b[j]:
-                        return False
+        for i in range(limit):
+            for j in range(limit):
+                if i < len(word_list_a) and j < len(word_list_b) and word_list_a[i] == word_list_b[j]:
+                    return False
         return True
     
     verse_dict_b_list = []
@@ -129,29 +128,43 @@ def find_matching_verses(verse_length, verse_dict_a):
     
     scores_verses_list = []
     for verse_dict_b in verse_dict_b_list:
+        score_limit = 5
         if not_contains_identical_words(verse_dict_a["word_list_phonemes"], verse_dict_b["word_list_phonemes"]):
             score = 0
             phonemes_list_a = verse_dict_a["phonemes"]
             phonemes_list_b = verse_dict_b["phonemes"]
-            max_range = int((len(phonemes_list_a) + len(phonemes_list_b)) / 4)
-            if max_range > 15:
-                max_range = 15
-            for i in range(1, max_range - 1):
-                # if (
-                #     i < len(phonemes_list_a) and i < len(phonemes_list_b)
-                #     and phonemes_list_a[i] == phonemes_list_b[i]
-                # ):
-                #     score += 1
-                
-                for j in (i - 1, i + 1):
-                    for k in (i - 1, i + 1):
-                        if (
-                            j < len(phonemes_list_a) and k < len(phonemes_list_b)
-                            and phonemes_list_a[j] == phonemes_list_b[k]
-                        ):
-                            score += 1 / i
-            if score > 4:
+            for i in range(score_limit):
+                if i < len(phonemes_list_a) and i < len(phonemes_list_b):
+                    phoneme_a = phonemes_list_a[i]
+                    phoneme_b = phonemes_list_b[i]
+                    if phoneme_a == phoneme_b:
+                        score += 1
+            
+            if score >= score_limit:
                 scores_verses_list.append((verse_dict_b, score))
+            
+            # score = 0
+            # phonemes_list_a = verse_dict_a["phonemes"]
+            # phonemes_list_b = verse_dict_b["phonemes"]
+            # max_range = int((len(phonemes_list_a) + len(phonemes_list_b)) / 4)
+            # if max_range > 15:
+            #     max_range = 15
+            # for i in range(1, max_range - 1):
+            #     # if (
+            #     #     i < len(phonemes_list_a) and i < len(phonemes_list_b)
+            #     #     and phonemes_list_a[i] == phonemes_list_b[i]
+            #     # ):
+            #     #     score += 1
+            #
+            #     for j in (i - 1, i + 1):
+            #         for k in (i - 1, i + 1):
+            #             if (
+            #                 j < len(phonemes_list_a) and k < len(phonemes_list_b)
+            #                 and phonemes_list_a[j] == phonemes_list_b[k]
+            #             ):
+            #                 score += 1 / i
+            # if score > 4:
+            #     scores_verses_list.append((verse_dict_b, score))
     
     scores_verses_list = sorted(scores_verses_list, key=lambda x: - x[1])
     if scores_verses_list != []:
@@ -280,7 +293,13 @@ def create_group(limit, verse_struct, exclusion_words_set):
         
     verses_dict_b_list = []
     for verses_dict_a in verses_dict_a_list:
-        if PIPE(verses_dict_a["text"])[0]["label"] == verse_struct[0][3]:
+        # TODO: refactor this workaround with is_valid_a
+        is_valid_a = False
+        if IS_TESTING and verses_dict_a["text_sent"] == verse_struct[0][3]:
+            is_valid_a = True
+        if not IS_TESTING and PIPE(verses_dict_a["text"])[0]["label"] == verse_struct[0][3]:
+            is_valid_a = True
+        if is_valid_a:
             exclusion_words_set_tmp = exclusion_words_set.copy()
             exclusion_words_set_tmp.add(verses_dict_a["word_list_phonemes"][0])
             result = find_matching_verses(verse_length, verses_dict_a)
@@ -288,9 +307,15 @@ def create_group(limit, verse_struct, exclusion_words_set):
                 num_found = 1
                 for i in range(limit - 1):
                     for verses_dict_b, _ in result:
+                        # TODO: refactor this workaround with is_valid_b
+                        is_valid_b = False
+                        if IS_TESTING and verses_dict_b["text_sent"] == verse_struct[i + 1][3]:
+                            is_valid_b = True
+                        if not IS_TESTING and PIPE(verses_dict_a["text"])[0]["label"] == verse_struct[0][3]:
+                            is_valid_b = True
                         if (
-                            verses_dict_b["word_list_phonemes"][0] not in exclusion_words_set_tmp
-                            and PIPE(verses_dict_b["text"])[0]["label"] == verse_struct[i + 1][3]
+                            is_valid_b
+                            and verses_dict_b["word_list_phonemes"][0] not in exclusion_words_set_tmp
                         ):
                             exclusion_words_set_tmp.add(verses_dict_b["word_list_phonemes"][0])
                             verses_dict_b_list.append(verses_dict_b)
