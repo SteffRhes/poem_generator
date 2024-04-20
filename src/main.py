@@ -4,37 +4,39 @@ import random
 from transformers import pipeline
 
 
-PIPE = pipeline("text-classification", model="finiteautomata/bertweet-base-sentiment-analysis")
-IS_TESTING = True
 DICT_FILEPATH = "../data/cmu_pronouncing_dictionary.txt"
 RAW_INPUT_TEXT_FILEPATH  = "../data/cleaned_text_only.txt"
 LIMIT_TEXT_LINES = None
 DICT_WORD_TO_PHONEMES = {}
 INDEX_VERSES = {}
 PUNCTUATION_MARKS = [".", ",", "!", "?", "…"]
+IS_TESTING = False
 if IS_TESTING:
-    random.seed(42)
+    # random.seed(42)
+    PIPE = None
+else:
+    PIPE = pipeline("text-classification", model="finiteautomata/bertweet-base-sentiment-analysis")
 
 
 VERSE_STRUCTURE = [
-    # [10, 20, 1, "POS"],
-    # [10, 20, 1, "POS"],
-    # [15, 25, 1, "POS"],
-    # [30, 40, 2, "NEG"],
-    # [30, 40, 2, "NEG"],
-    # [30, 40, 2, "NEG"],
-    # [20, 30, 4, "POS"],
-    # [20, 30, 4, "POS"],
-    [40, 50, 5, "POS"],
-    [40, 50, 5, "POS"],
-    [40, 50, 6, "NEG"],
-    [40, 50, 6, "NEG"],
-    [40, 50, 7, "NEG"],
+    [10, 20, 1, "POS"],
+    [10, 20, 1, "POS"],
+    [15, 25, 2, "POS"],
+    [30, 40, 2, "NEG"],
+    [30, 40, 2, "NEG"],
+    [30, 40, 3, "NEG"],
+    [20, 30, 3, "POS"],
+    [20, 30, 4, "POS"],
+    [30, 40, 4, "POS"],
+    [30, 40, 5, "POS"],
+    [30, 40, 5, "NEG"],
+    [30, 40, 6, "NEG"],
+    [30, 40, 6, "NEG"],
     [15, 25, 7, "POS"],
-    [15, 25, 8, "NEG"],
+    [15, 25, 7, "NEG"],
     [15, 25, 8, "POS"],
-    [15, 25, 7, "NEG"],
-    [15, 25, 7, "NEG"],
+    [15, 25, 8, "NEG"],
+    [15, 25, 8, "NEG"],
 ]
 
 
@@ -92,9 +94,9 @@ def parse_and_index_text():
                             else:
                                 text_sent = "NEG"
                         else:
-                            # TODO: real sentiment analysis
+                            # TODO: refactor
+                            # text_sent = PIPE(phrase)[0]
                             text_sent = None
-                        
                         verse_dict = {
                             "text": phrase,
                             "text_sent": text_sent,
@@ -113,10 +115,13 @@ def parse_and_index_text():
 def find_matching_verses(verse_length, verse_dict_a):
     
     def not_contains_identical_words(word_list_a, word_list_b):
-        if word_list_a[0] != word_list_b[0]:
-            return True
-        else:
-            return False
+        limit = 3
+        if len(word_list_a) >= limit and len(word_list_b) >= limit:
+            for i in range(limit):
+                for j in range(limit):
+                    if word_list_a[i] == word_list_b[j]:
+                        return False
+        return True
     
     verse_dict_b_list = []
     for vl in range(verse_length[0], verse_length[1] + 1):
@@ -128,8 +133,16 @@ def find_matching_verses(verse_length, verse_dict_a):
             score = 0
             phonemes_list_a = verse_dict_a["phonemes"]
             phonemes_list_b = verse_dict_b["phonemes"]
-            len_half_avg = int((len(phonemes_list_a) + len(phonemes_list_b)) / 4)
-            for i in range(1, len_half_avg - 1):
+            max_range = int((len(phonemes_list_a) + len(phonemes_list_b)) / 4)
+            if max_range > 15:
+                max_range = 15
+            for i in range(1, max_range - 1):
+                # if (
+                #     i < len(phonemes_list_a) and i < len(phonemes_list_b)
+                #     and phonemes_list_a[i] == phonemes_list_b[i]
+                # ):
+                #     score += 1
+                
                 for j in (i - 1, i + 1):
                     for k in (i - 1, i + 1):
                         if (
@@ -267,21 +280,26 @@ def create_group(limit, verse_struct, exclusion_words_set):
         
     verses_dict_b_list = []
     for verses_dict_a in verses_dict_a_list:
-        exclusion_words_set_tmp = exclusion_words_set.copy()
-        exclusion_words_set_tmp.add(verses_dict_a["word_list_phonemes"][0])
-        result = find_matching_verses(verse_length, verses_dict_a)
-        if result is not None and len(result) >= limit - 1:
-            num_found = 1
-            for i in range(limit - 1):
-                verses_dict_b = result[i][0]
-                if verses_dict_b["word_list_phonemes"][0] not in exclusion_words_set_tmp:
-                    exclusion_words_set_tmp.add(verses_dict_b["word_list_phonemes"][0])
-                    verses_dict_b_list.append(verses_dict_b)
-                    num_found += 1
-                    
-            if num_found == limit:
-                exclusion_words_set = exclusion_words_set_tmp
-                break
+        if PIPE(verses_dict_a["text"])[0]["label"] == verse_struct[0][3]:
+            exclusion_words_set_tmp = exclusion_words_set.copy()
+            exclusion_words_set_tmp.add(verses_dict_a["word_list_phonemes"][0])
+            result = find_matching_verses(verse_length, verses_dict_a)
+            if result is not None and len(result) >= limit - 1:
+                num_found = 1
+                for i in range(limit - 1):
+                    for verses_dict_b, _ in result:
+                        if (
+                            verses_dict_b["word_list_phonemes"][0] not in exclusion_words_set_tmp
+                            and PIPE(verses_dict_b["text"])[0]["label"] == verse_struct[i + 1][3]
+                        ):
+                            exclusion_words_set_tmp.add(verses_dict_b["word_list_phonemes"][0])
+                            verses_dict_b_list.append(verses_dict_b)
+                            num_found += 1
+                            break
+                        
+                if num_found == limit:
+                    exclusion_words_set = exclusion_words_set_tmp
+                    break
     
     return ([verses_dict_a] + verses_dict_b_list, exclusion_words_set)
     
@@ -303,22 +321,27 @@ def main():
             if verse_struct[2] == k:
                 verse_struct_list.append(verse_struct)
         results, exclusion_set = create_group(v, verse_struct_list, exclusion_set)
-        groups_verses_dict[k] = [r["text"] for r in results]
+        results = [r["text"] for r in results]
+        if IS_TESTING:
+            for r in results:
+                print(r)
+        groups_verses_dict[k] = results
 
-    verse_list_all = []
-    for verse_struct in VERSE_STRUCTURE:
-        verses_list = groups_verses_dict[verse_struct[2]]
-        verse = verses_list[0]
-        del verses_list[0]
-        verse_list_all.append(verse)
-        print(verse)
-    #
-    # with open("../README.md", "a") as f:
-    #     f.write("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-    #     f.write("```\n")
-    #     for verse in verse_list_all:
-    #         f.write(verse + "\n")
-    #     f.write("```\n")
+    if not IS_TESTING:
+        verse_list_all = []
+        for verse_struct in VERSE_STRUCTURE:
+            verses_list = groups_verses_dict[verse_struct[2]]
+            verse = verses_list[0]
+            del verses_list[0]
+            verse_list_all.append(verse)
+            print(verse)
+    
+        with open("../README.md", "a") as f:
+            f.write("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+            f.write("```\n")
+            for verse in verse_list_all:
+                f.write(verse + "\n")
+            f.write("```\n")
         
 
 if __name__ == "__main__":

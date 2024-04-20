@@ -62,3 +62,47 @@ Can’t let that happen!
 and so wrong.What liars…
 Human Traffickers.
 ```
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
+New book just out,
+a truly GREAT State,
+t won the 2016 Election,
+No sense of direction.
+s Fake Trending Section!
+Trump needed no other justification.
+The President has put the Nation'
+Defending ALL Americans,
+Great News for America.
+giving companies a better alternative!
+we could have NO representative,
+but the Fake News refuses to report it!
+as people are incorrectly reporting,
+Welcome to America!
+She was a terrible A.
+I love that State,
+Unemployment at.
+police crusade must STOP.
+```
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
+SAVE AMERICA!
+Great for Florida,
+Congratulations!
+She was a terrible A.
+killing regulations.
+and ruin lives and businesses.
+foxandfriends Very interesting analysis.
+s good for America -
+day celebration of Hanukkah.
+usminority You are an inspiration.
+He had the policy of child separation.
+s alternative is no longer available,
+The HYPOCRISY is Unbelievable!
+Very easy to do -
+then they sue you,
+I love you too!
+She was a terrible A.
+This can not stand.
+```
