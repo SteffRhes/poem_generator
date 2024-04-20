@@ -1,2 +1,0 @@
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~```but good conversations!Congratulations!disgusting actions!It is a disgrace to our now Third World Nation!It is all based on their Fraud and Fabrication!A big step by CNN. Congratulations!They are truly The Enemy of the People!GROWTH is beating MARKET EXPECTATIONS!to tell me? NO.” So plain and simple!” is all they can do. Corrupt Politicians!A tough situation, but good conversations!there would be very serious ramifications!and the United States. Congratulations!Merry Christmas!). Disgraceful!Thank you Thomas!Deep State. Shameful!```

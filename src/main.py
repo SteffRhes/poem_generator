@@ -228,12 +228,12 @@ def main():
         verse_list_all.append(verse)
         print(verse)
         
-    with open("./README.md", "a") as f:
-        f.write("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        f.write("```")
+    with open("../README.md", "a") as f:
+        f.write("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+        f.write("```\n")
         for verse in verse_list_all:
-            f.write(verse)
-        f.write("```")
+            f.write(verse + "\n")
+        f.write("```\n")
         
 
 if __name__ == "__main__":
