@@ -4,13 +4,14 @@ import random
 from transformers import pipeline
 
 
-# random.seed(42)
+random.seed(42)
+SHOW_PRINTS = True
 PIPE = pipeline("text-classification", model="finiteautomata/bertweet-base-sentiment-analysis")
 DICT_FILEPATH = "../data/cmu_pronouncing_dictionary.txt"
 RAW_INPUT_TEXT_FILEPATH  = "../data/cleaned_text_only.txt"
 LIMIT_TEXT_LINES = None
 DICT_WORD_TO_PHONEMES = {}
-TEXT_LIST = []
+INDEX_PHRASES = []
 PUNCTUATION_MARKS = [".", ",", "!", "?", "…"]
 
 
@@ -36,6 +37,7 @@ VERSE_STRUCTURE = [
 ]
 
 
+
 def build_word_to_phoneme():
     global DICT_WORD_TO_PHONEMES
     with open(DICT_FILEPATH) as file:
@@ -46,25 +48,27 @@ def build_word_to_phoneme():
             DICT_WORD_TO_PHONEMES[word] = phonemes
 
 
-def parse_input_text():
-    global TEXT_LIST
-    with open(RAW_INPUT_TEXT_FILEPATH) as file:
-        line = file.readline()
-        i = 0
-        global LIMIT_TEXT_LINES
-        if LIMIT_TEXT_LINES is None:
-            LIMIT_TEXT_LINES = math.inf
-        while line and i < LIMIT_TEXT_LINES:
-            # TODO: Add sentence splitting here, or sub-sentence phrase detection
-            TEXT_LIST.append(line)
-            line = file.readline()
-            i += 1
+def parse_and_index_text():
+    global INDEX_PHRASES
+    with open(RAW_INPUT_TEXT_FILEPATH) as f:
+        for line in f:
+            line_split = re.split(r"(?<=[^\w\s])", line)
+            for phrase in line_split:
+                if len(phrase.strip()) >= 5 and phrase[-1] in PUNCTUATION_MARKS + ["-", "'", '"', "“"]:
+                    last_word = re.split(r"\s+", phrase[:-1])[-1]
+                    if last_word.upper() in DICT_WORD_TO_PHONEMES and len(phrase.strip()) >= 5:
+                        print(phrase)
+                else:
+                    if SHOW_PRINTS:
+                        print(f"discard: {phrase}")
+            INDEX_PHRASES.append(line)
+    raise Exception
 
 
 def create_random_verse(verse_length, sentiment_target):
     found_random_verse = False
     while not found_random_verse:
-        random_index = random.randint(0, len(TEXT_LIST) - 1)
+        random_index = random.randint(0, len(INDEX_PHRASES) - 1)
         verse_a, random_word = build_potential_verse_from_word(verse_length, random_index, sentiment_target)
         if verse_a is not None:
             found_random_verse = True
@@ -73,7 +77,7 @@ def create_random_verse(verse_length, sentiment_target):
     
 def build_potential_verse_from_word(verse_length, i, sentiment_target):
     verse = None
-    text = TEXT_LIST[i]
+    text = INDEX_PHRASES[i]
     word, word_i_end = get_last_word_of_text(text)
     if word.upper() in DICT_WORD_TO_PHONEMES:
         verse_potential = ""
@@ -125,8 +129,8 @@ def create_matching_verse(verse_length, sent_verse_b, exclusion_set, verse_a, wo
     def create_all_matching_verses(verse_length, word_a, sent_verse_b):
         rhyming_verses_b_word_list = []
         phonemes_a_to_match = DICT_WORD_TO_PHONEMES[word_a.upper()]
-        for i in range(len(TEXT_LIST)):
-            word_b, _ = get_last_word_of_text(TEXT_LIST[i])
+        for i in range(len(INDEX_PHRASES)):
+            word_b, _ = get_last_word_of_text(INDEX_PHRASES[i])
             if word_b.upper() != word_a.upper():
                 phonemes_b_to_match = DICT_WORD_TO_PHONEMES.get(word_b.upper())
                 if phonemes_b_to_match is not None:
@@ -204,7 +208,7 @@ def create_group(limit, verse_struct, exclusion_set):
 
 def main():
     build_word_to_phoneme()
-    parse_input_text()
+    parse_and_index_text()
     
     exclusion_set = set()
     groups_count_dict = {}
