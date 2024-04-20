@@ -219,12 +219,21 @@ def main():
                 verse_struct_list.append(verse_struct)
         results, exclusion_set = create_group(v, verse_struct_list, exclusion_set)
         groups_verses_dict[k] = results
-        
+    
+    verse_list_all = []
     for verse_struct in VERSE_STRUCTURE:
         verses_list = groups_verses_dict[verse_struct[2]]
         verse = verses_list[0]
         del verses_list[0]
+        verse_list_all.append(verse)
         print(verse)
+        
+    with open("./README.md", "a") as f:
+        f.write("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        f.write("```")
+        for verse in verse_list_all:
+            f.write(verse)
+        f.write("```")
         
 
 if __name__ == "__main__":
