@@ -4,7 +4,7 @@ import random
 from transformers import pipeline
 
 
-random.seed(42)  # You can replace 42 with any integer value you like
+# random.seed(42)
 PIPE = pipeline("text-classification", model="finiteautomata/bertweet-base-sentiment-analysis")
 DICT_FILEPATH = "../data/cmu_pronouncing_dictionary.txt"
 RAW_INPUT_TEXT_FILEPATH  = "../data/cleaned_text_only.txt"
@@ -15,22 +15,23 @@ PUNCTUATION_MARKS = [".", ",", "!", "?", "…"]
 
 
 VERSE_STRUCTURE = [
-    [10, 20, "POS", 1],
-    [10, 20, "POS", 1],
-    [10, 20, "NEG", 1],
-    [30, 40, "NEG", 2],
-    [30, 40, "NEG", 2],
-    [20, 30, "POS", 3],
-    [20, 30, "NEG", 4],
-    [20, 30, "POS", 3],
-    [20, 30, "NEG", 4],
-    # [40, 50, "POS", 5],
-    # [40, 50, "POS", 5],
-    # [40, 50, "POS", 5],
-    # [10, 20, "NEG", 6],
-    # [10, 20, "NEG", 6],
-    # [10, 20, "NEG", 6],
-    # [10, 20, "POS", 6],
+    [20, 30, 1, "POS"],
+    [20, 30, 1, "POS"],
+    [20, 30, 1, "NEG"],
+    [40, 50, 2, "NEG"],
+    [40, 50, 2, "NEG"],
+    [30, 40, 3, "POS"],
+    [30, 40, 4, "NEG"],
+    [30, 40, 3, "POS"],
+    [30, 40, 4, "NEG"],
+    [60, 70, 5, "NEG"],
+    [60, 70, 5, "NEG"],
+    [60, 70, 5, "NEG"],
+    [50, 60, 5, "POS"],
+    [20, 30, 6, "NEG"],
+    [20, 30, 7, "POS"],
+    [20, 30, 6, "NEG"],
+    [20, 30, 7, "POS"],
 ]
 
 
@@ -184,7 +185,7 @@ def create_group(limit, verse_struct, exclusion_set):
             count_current = 0
             verse_current, word_current = create_random_verse(
                 (verse_struct[count_current][0], verse_struct[count_current][1]),
-                verse_struct[count_current][2]
+                verse_struct[count_current][3]
             )
             results = [verse_current]
             count_current += 1
@@ -192,7 +193,7 @@ def create_group(limit, verse_struct, exclusion_set):
         else:
             verse_current, word_current, exclusion_set_current = create_matching_verse(
                 (verse_struct[count_current][0], verse_struct[count_current][1]),
-                verse_struct[count_current][2],
+                verse_struct[count_current][3],
                 exclusion_set_current,
                 verse_current,
                 word_current,
@@ -211,20 +212,20 @@ def main():
     exclusion_set = set()
     groups_count_dict = {}
     for verse_struct in VERSE_STRUCTURE:
-        group_count = groups_count_dict.get(verse_struct[3], 0)
-        groups_count_dict[verse_struct[3]] = group_count + 1
+        group_count = groups_count_dict.get(verse_struct[2], 0)
+        groups_count_dict[verse_struct[2]] = group_count + 1
     
     groups_verses_dict = {}
     for k, v in groups_count_dict.items():
         verse_struct_list = []
         for verse_struct in VERSE_STRUCTURE:
-            if verse_struct[3] == k:
+            if verse_struct[2] == k:
                 verse_struct_list.append(verse_struct)
         results, exclusion_set = create_group(v, verse_struct_list, exclusion_set)
         groups_verses_dict[k] = results
         
     for verse_struct in VERSE_STRUCTURE:
-        verses_list = groups_verses_dict[verse_struct[3]]
+        verses_list = groups_verses_dict[verse_struct[2]]
         verse = verses_list[0]
         del verses_list[0]
         print(verse)
