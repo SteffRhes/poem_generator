@@ -1,9 +1,10 @@
 import re
 import math
-from random import randint
+import random
 from transformers import pipeline
 
 
+random.seed(42)  # You can replace 42 with any integer value you like
 PIPE = pipeline("text-classification", model="finiteautomata/bertweet-base-sentiment-analysis")
 DICT_FILEPATH = "../data/cmu_pronouncing_dictionary.txt"
 RAW_INPUT_TEXT_FILEPATH  = "../data/cleaned_text_only.txt"
@@ -13,12 +14,23 @@ TEXT_LIST = []
 PUNCTUATION_MARKS = [".", ",", "!", "?", "…"]
 
 
-STRUCTURE = [
-    [20, 35, "POS", 1],
-    [20, 35, "NEG", 1],
-    [20, 35, "NEG", 1],
-    [10, 20, "POS", 2],
-    [10, 20, "NEG", 2],
+VERSE_STRUCTURE = [
+    [10, 20, "POS", 1],
+    [10, 20, "POS", 1],
+    [10, 20, "NEG", 1],
+    [30, 40, "NEG", 2],
+    [30, 40, "NEG", 2],
+    [20, 30, "POS", 3],
+    [20, 30, "NEG", 4],
+    [20, 30, "POS", 3],
+    [20, 30, "NEG", 4],
+    # [40, 50, "POS", 5],
+    # [40, 50, "POS", 5],
+    # [40, 50, "POS", 5],
+    # [10, 20, "NEG", 6],
+    # [10, 20, "NEG", 6],
+    # [10, 20, "NEG", 6],
+    # [10, 20, "POS", 6],
 ]
 
 
@@ -58,7 +70,7 @@ def parse_input_text():
 def create_random_verse(verse_length, sentiment_target):
     found_random_verse = False
     while not found_random_verse:
-        random_index = randint(0, len(TEXT_LIST) - 1)
+        random_index = random.randint(0, len(TEXT_LIST) - 1)
         verse_a, random_word = build_potential_verse_from_word(verse_length, random_index, sentiment_target)
         if verse_a is not None:
             found_random_verse = True
@@ -113,112 +125,110 @@ def get_last_word_of_text(text):
     return word, word_i_end
 
 
-def find_rhyming_verses_b(verse_length, word_a, sent_verse_b):
-    rhyming_verses_b_word_list = []
-    phonemes_a_to_match = DICT_WORD_TO_PHONEMES[word_a.upper()]
-    for i in range(len(TEXT_LIST)):
-        word_b, _ = get_last_word_of_text(TEXT_LIST[i])
-        if word_b.upper() != word_a.upper():
-            phonemes_b_to_match = DICT_WORD_TO_PHONEMES.get(word_b.upper())
-            if phonemes_b_to_match is not None:
-                if len(phonemes_a_to_match) < len(phonemes_b_to_match):
-                    limit = len(phonemes_a_to_match)
-                else:
-                    limit = len(phonemes_b_to_match)
-                count_match = 0
-                for j in range(1, limit + 1):
-                    if phonemes_a_to_match[-j] == phonemes_b_to_match[-j]:
-                        count_match += 1
+def create_matching_verse(verse_length, sent_verse_b, exclusion_set, verse_a, word_a):
+    
+    def create_all_matching_verses(verse_length, word_a, sent_verse_b):
+        rhyming_verses_b_word_list = []
+        phonemes_a_to_match = DICT_WORD_TO_PHONEMES[word_a.upper()]
+        for i in range(len(TEXT_LIST)):
+            word_b, _ = get_last_word_of_text(TEXT_LIST[i])
+            if word_b.upper() != word_a.upper():
+                phonemes_b_to_match = DICT_WORD_TO_PHONEMES.get(word_b.upper())
+                if phonemes_b_to_match is not None:
+                    if len(phonemes_a_to_match) < len(phonemes_b_to_match):
+                        limit = len(phonemes_a_to_match)
                     else:
-                        break
-                if count_match >= 4 and count_match <= 5:
-                    verse_b_potential, _ = build_potential_verse_from_word(verse_length, i, sent_verse_b)
-                    if verse_b_potential is not None:
-                        rhyming_verses_b_word_list.append((verse_b_potential, word_b))
-
-    return rhyming_verses_b_word_list
-
-
-def create_matching_verse(verse_length, exclusion_set, verse_a, word_a, sent_verse_b):
+                        limit = len(phonemes_b_to_match)
+                    count_match = 0
+                    for j in range(1, limit + 1):
+                        if phonemes_a_to_match[-j] == phonemes_b_to_match[-j]:
+                            count_match += 1
+                        else:
+                            break
+                    if count_match >= 3 and count_match <= 5:
+                        verse_b_potential, _ = build_potential_verse_from_word(verse_length, i, sent_verse_b)
+                        if verse_b_potential is not None:
+                            rhyming_verses_b_word_list.append((verse_b_potential, word_b))
+        
+        return rhyming_verses_b_word_list
+    
     verse_b = None
     word_b = None
-    if word_a.upper() not in exclusion_set:
-        rhyming_verses_b_word_list = find_rhyming_verses_b(verse_length, word_a, sent_verse_b)
-        difference = math.inf
-        if rhyming_verses_b_word_list != []:
-            for verses_b_word_potential in rhyming_verses_b_word_list:
-                verse_b_potential = verses_b_word_potential[0]
-                word_b_potential = verses_b_word_potential[1]
-                if word_b_potential.upper() not in exclusion_set:
-                    difference_potential = abs(len(verse_a) - len(verse_b_potential))
-                    if difference_potential < difference:
-                        difference = difference_potential
-                        verse_b = verse_b_potential
-                        word_b = word_b_potential
+    rhyming_verses_b_word_list = create_all_matching_verses(verse_length, word_a, sent_verse_b)
+    difference = math.inf
+    if rhyming_verses_b_word_list != []:
+        for verses_b_word_potential in rhyming_verses_b_word_list:
+            verse_b_potential = verses_b_word_potential[0]
+            word_b_potential = verses_b_word_potential[1]
+            if word_b_potential.upper() not in exclusion_set:
+                difference_potential = abs(len(verse_a) - len(verse_b_potential))
+                if difference_potential < difference:
+                    difference = difference_potential
+                    verse_b = verse_b_potential
+                    word_b = word_b_potential
     
-            exclusion_set.add(word_a.upper())
-            exclusion_set.add(word_b.upper())
+    if word_b is not None:
+        exclusion_set.add(word_a.upper())
+        exclusion_set.add(word_b.upper())
     return (verse_b, word_b, exclusion_set)
 
-
-# def clean_and_print_verses(verses):
-#     if len(verses) % 2 == 0:
-#         verses_to_mingle = verses[:-2]
-#         verses_last = verses[-2:]
-#     else:
-#         verses_to_mingle = verses[:-1]
-#         verses_last = verses[-1:]
-#
-#     verses_mingled = []
-#     for i in range(0, len(verses_to_mingle)-1, 2):
-#         verses_mingled.append(verses_to_mingle[i][0])
-#         verses_mingled.append(verses_to_mingle[i+1][0])
-#         verses_mingled.append(verses_to_mingle[i][1])
-#         verses_mingled.append(verses_to_mingle[i+1][1])
-#
-#     for vl in verses_last:
-#         verses_mingled.append(vl[0])
-#         verses_mingled.append(vl[1])
-#
-#     verse_start = verses_mingled[0]
-#     if verse_start[0].isalpha():
-#         verses_mingled[0] = verse_start[0].upper() + verse_start[1:]
-#     for i in range(0, len(verses_mingled)):
-#         verse = verses_mingled[i]
-#         if i < len(verses_mingled)-1:
-#             if verse[-1] != "." and verse[-1] != "!" and verse[-1] != "?":
-#                 if verse[-1] != ",":
-#                     verses_mingled[i] = verse + ","
-#             else:
-#                 verse_next = verses_mingled[i+1]
-#                 if verse_next[0].isalpha():
-#                     verses_mingled[i+1] = verse_next[0].upper() + verse_next[1:]
-#
-#         elif verse[-1] != "." and verse[-1] != "!" and verse[-1] != "?":
-#             if verse[-1] == ",":
-#                 verses_mingled[i] = verse[:-1] + "."
-#             else:
-#                 verses_mingled[i] = verse + "."
-#
-#     for v in verses_mingled:
-#         print(v)
+    
+def create_group(limit, verse_struct, exclusion_set):
+    verse_current = None
+    word_current = None
+    results = []
+    count_current = 0
+    exclusion_set_current = exclusion_set.copy()
+    while count_current < limit:
+        if verse_current is None and word_current is None:
+            count_current = 0
+            verse_current, word_current = create_random_verse(
+                (verse_struct[count_current][0], verse_struct[count_current][1]),
+                verse_struct[count_current][2]
+            )
+            results = [verse_current]
+            count_current += 1
+            exclusion_set_current = {word_current.upper()}
+        else:
+            verse_current, word_current, exclusion_set_current = create_matching_verse(
+                (verse_struct[count_current][0], verse_struct[count_current][1]),
+                verse_struct[count_current][2],
+                exclusion_set_current,
+                verse_current,
+                word_current,
+            )
+            if verse_current is not None:
+                results.append(verse_current)
+                count_current += 1
+    
+    return results, exclusion_set_current.copy()
 
 
 def main():
     build_word_to_phoneme()
     parse_input_text()
+    
     exclusion_set = set()
-    found = False
-    while not found:
-        verse_a, word_a = create_random_verse((20, 35), "POS")
-        verse_b, word_b, exclusion_set = create_matching_verse(
-            (20, 35), exclusion_set, verse_a, word_a, "NEG"
-        )
-        if verse_a is not None:
-            found = True
-    print(verse_a, verse_b)
-    # clean_and_print_verses(verses)
-
+    groups_count_dict = {}
+    for verse_struct in VERSE_STRUCTURE:
+        group_count = groups_count_dict.get(verse_struct[3], 0)
+        groups_count_dict[verse_struct[3]] = group_count + 1
+    
+    groups_verses_dict = {}
+    for k, v in groups_count_dict.items():
+        verse_struct_list = []
+        for verse_struct in VERSE_STRUCTURE:
+            if verse_struct[3] == k:
+                verse_struct_list.append(verse_struct)
+        results, exclusion_set = create_group(v, verse_struct_list, exclusion_set)
+        groups_verses_dict[k] = results
+        
+    for verse_struct in VERSE_STRUCTURE:
+        verses_list = groups_verses_dict[verse_struct[3]]
+        verse = verses_list[0]
+        del verses_list[0]
+        print(verse)
+        
 
 if __name__ == "__main__":
     main()
