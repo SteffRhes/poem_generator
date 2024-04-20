@@ -299,7 +299,7 @@ def create_group(limit, verse_struct, exclusion_words_set):
             is_valid_a = True
         if not IS_TESTING:
             sent = PIPE(verses_dict_a["text"])[0]
-            if sent["label"] == verse_struct[0][3] and sent["score"] > 0.95:
+            if sent["label"] == verse_struct[0][3] and sent["score"] > 0.9:
                 is_valid_a = True
         if is_valid_a:
             exclusion_words_set_tmp = exclusion_words_set.copy()
@@ -315,7 +315,7 @@ def create_group(limit, verse_struct, exclusion_words_set):
                             is_valid_b = True
                         if not IS_TESTING:
                             sent = PIPE(verses_dict_b["text"])[0]
-                            if sent["label"] == verse_struct[i + 1][3] and sent["score"] > 0.95:
+                            if sent["label"] == verse_struct[i + 1][3] and sent["score"] > 0.9:
                                 is_valid_b = True
                         if (
                             is_valid_b

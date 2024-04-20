@@ -150,3 +150,25 @@ Total Endorsement!
 Video Conference -
 Law Enforcement,
 ```
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
+Big crowd expected.
+apparatus perfected.
+Congratulations,
+disgusting actions!
+false allegations,
+Do Nothing Democrats corrupt practices!
+2 great Supreme Court Justices,
+and for very good reason.
+and this was TREASON!
+Honored to be with these congregations.
+for false and disgusting accusations!
+and outright lies in the Democrats…
+A cabal of unelected bureaucrats-
+Congratulations!
+needless provocations,
+I WON THE ELECTION!
+Corrupt politicians,
+No sense of direction.
+```
