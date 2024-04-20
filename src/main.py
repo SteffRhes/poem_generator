@@ -297,8 +297,10 @@ def create_group(limit, verse_struct, exclusion_words_set):
         is_valid_a = False
         if IS_TESTING and verses_dict_a["text_sent"] == verse_struct[0][3]:
             is_valid_a = True
-        if not IS_TESTING and PIPE(verses_dict_a["text"])[0]["label"] == verse_struct[0][3]:
-            is_valid_a = True
+        if not IS_TESTING:
+            sent = PIPE(verses_dict_a["text"])[0]
+            if sent["label"] == verse_struct[0][3] and sent["score"] > 0.95:
+                is_valid_a = True
         if is_valid_a:
             exclusion_words_set_tmp = exclusion_words_set.copy()
             exclusion_words_set_tmp.add(verses_dict_a["word_list_phonemes"][0])
@@ -311,8 +313,10 @@ def create_group(limit, verse_struct, exclusion_words_set):
                         is_valid_b = False
                         if IS_TESTING and verses_dict_b["text_sent"] == verse_struct[i + 1][3]:
                             is_valid_b = True
-                        if not IS_TESTING and PIPE(verses_dict_a["text"])[0]["label"] == verse_struct[0][3]:
-                            is_valid_b = True
+                        if not IS_TESTING:
+                            sent = PIPE(verses_dict_b["text"])[0]
+                            if sent["label"] == verse_struct[i + 1][3] and sent["score"] > 0.95:
+                                is_valid_b = True
                         if (
                             is_valid_b
                             and verses_dict_b["word_list_phonemes"][0] not in exclusion_words_set_tmp
