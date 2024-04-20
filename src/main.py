@@ -9,8 +9,8 @@ DICT_FILEPATH = "../data/cmu_pronouncing_dictionary.txt"
 RAW_INPUT_TEXT_FILEPATH  = "../data/cleaned_text_only.txt"
 LIMIT_TEXT_LINES = 10000
 DICT_WORD_TO_PHONEMES = {}
-LIST_WORDS = []
-VERSE_LENGTHS = [(30, 50), (20, 50), (10, 20)]
+TEXT_LIST = []
+VERSE_LENGTHS = [(20, 40), (20, 40), (10, 20)]
 SENTIMENT = ["POS"]
 PUNCTUATION_MARKS = [".", ",", "!", "?", "…"]
 
@@ -26,94 +26,123 @@ def build_word_to_phoneme():
 
 
 def parse_input_text():
-    global LIST_WORDS
+    global TEXT_LIST
     with open(RAW_INPUT_TEXT_FILEPATH) as file:
         line = file.readline()
         i = 0
         global LIMIT_TEXT_LINES
         if LIMIT_TEXT_LINES is None:
-            LIMIT_TEXT_LINES = float("inf")
+            LIMIT_TEXT_LINES = math.inf
         while line and i < LIMIT_TEXT_LINES:
-            for word in line.split(" "):
-                word = re.sub(r"""\n|\(|\)|\"|”|“""", "", word)
-                word = word.lstrip(".")
-                if "http" not in word and word != "" and word != "-" and word != "–":
-                    LIST_WORDS.append(word)
-
+            # TODO: Add sentence splitting here, or sub-sentence phrase detection
+            TEXT_LIST.append(line)
             line = file.readline()
             i += 1
+            # for word in line.split(" "):
+            #     word = re.sub(r"""\n|\(|\)|\"|”|“""", "", word)
+            #     word = word.lstrip(".")
+            #     if "http" not in word and word != "" and word != "-" and word != "–":
+            #         PHRASES_LIST.append(word)
+            #
+            # line = file.readline()
+            # i += 1
 
 
 def create_random_verse_pair(verse_length, sent_verse_a, sent_verse_b):
+    
+    def get_last_word_of_text(text):
+        word = ""
+        punctuation_found = False
+        for i in range(len(text) - 1, -1, -1):
+            c = text[i]
+            if c in PUNCTUATION_MARKS:
+                word_i_end = i
+                punctuation_found = True
+            elif punctuation_found:
+                if c != " ":
+                    word = c + word
+                else:
+                    break
+        return word, word_i_end
+        
 
     def build_potential_verse_from_word(verse_length, i, sentiment_target):
         verse = None
-        word = LIST_WORDS[i]
-        if word.upper() in DICT_WORD_TO_PHONEMES and word[-1] in PUNCTUATION_MARKS:
-            verse_potential = word
+        text = TEXT_LIST[i]
+        word, word_i_end = get_last_word_of_text(text)
+        if word.upper() in DICT_WORD_TO_PHONEMES:
+            verse_potential = ""
             end = False
-            j = i
+            j = word_i_end
             while not end:
-                j -= 1
-                new_word = LIST_WORDS[j]
-                verse_potential_safe = verse_potential
-                verse_potential = new_word + " " + verse_potential
-                if new_word[-1] in PUNCTUATION_MARKS or len(verse_potential) > verse_length[1]:
-                    end = True
-                    verse_potential = verse_potential_safe
+                if j >= 0:
+                    c = text[j]
+                    verse_potential = c + verse_potential
+                    if len(verse_potential) > verse_length[0]:
+                        if c in PUNCTUATION_MARKS:
+                            end = True
+                            verse_potential = verse_potential[1:].strip()
+                        if len(verse_potential) > verse_length[1]:
+                            end = True
+                            verse_potential = None
+                            
+                    j -= 1
                     
-            if verse_length[0] <= len(verse_potential) <= verse_length[1]:
+                else:
+                    end = True
+                
+            if verse_potential is not None:
                 sent_pred= PIPE(verse_potential)[0]
                 if sent_pred["label"] == sentiment_target and sent_pred["score"] > 0.8:
                     verse = verse_potential
                     
-        return verse
+        return verse, word
 
-    def find_rhyming_verses_b(word_a):
-        result_indices = []
-        word_a = word_a.upper()
-        phonemes_a_to_match = DICT_WORD_TO_PHONEMES[word_a]
-        # dict_matches = {}
-        for i, word_b in enumerate(LIST_WORDS):
-            word_b = word_b.upper()
-            if word_b != word_a and word_b in DICT_WORD_TO_PHONEMES:
-                phonemes_b_to_match = DICT_WORD_TO_PHONEMES[word_b]
-                if len(phonemes_a_to_match) < len(phonemes_b_to_match):
-                    limit = len(phonemes_a_to_match)
-                else:
-                    limit = len(phonemes_b_to_match)
-                count_match = 0
-                for j in range(1, limit + 1):
-                    if phonemes_a_to_match[-j] == phonemes_b_to_match[-j]:
-                        count_match += 1
+    def find_rhyming_verses_b(verse_length, word_a, sent_verse_b):
+        rhyming_verses_b = []
+        phonemes_a_to_match = DICT_WORD_TO_PHONEMES[word_a.upper()]
+        for i in range(len(TEXT_LIST)):
+            word_b_potential, _ = get_last_word_of_text(TEXT_LIST[i])
+            if word_b_potential.upper() != word_a.upper():
+                phonemes_b_to_match = DICT_WORD_TO_PHONEMES.get(word_b_potential.upper())
+                if phonemes_b_to_match is not None:
+                    if len(phonemes_a_to_match) < len(phonemes_b_to_match):
+                        limit = len(phonemes_a_to_match)
                     else:
-                        break
-                if count_match >= 3 and count_match <= 5:
-                    result_indices.append(i)
-        #             list_indices = []
-        #             if count_match in dict_matches:
-        #                 list_indices = dict_matches[count_match]
-        #             list_indices.append(i)
-        #             dict_matches[count_match] = list_indices
-        #
-        # if dict_matches:
-        #     list_match_keys = list(dict_matches.keys())
-        #     max_count_match = max(list_match_keys)
-        #     # print("highest count_match:", max_count_match)
-        #     result_indices = dict_matches[max_count_match]
+                        limit = len(phonemes_b_to_match)
+                    count_match = 0
+                    for j in range(1, limit + 1):
+                        if phonemes_a_to_match[-j] == phonemes_b_to_match[-j]:
+                            count_match += 1
+                        else:
+                            break
+                    if count_match >= 3 and count_match <= 5:
+                        verse_b_potential, _ = build_potential_verse_from_word(verse_length, i, sent_verse_b)
+                        if verse_b_potential is not None:
+                            rhyming_verses_b.append(verse_b_potential)
+                
+            #             list_indices = []
+            #             if count_match in dict_matches:
+            #                 list_indices = dict_matches[count_match]
+            #             list_indices.append(i)
+            #             dict_matches[count_match] = list_indices
+            #
+            # if dict_matches:
+            #     list_match_keys = list(dict_matches.keys())
+            #     max_count_match = max(list_match_keys)
+            #     # print("highest count_match:", max_count_match)
+            #     result_indices = dict_matches[max_count_match]
 
-        return result_indices
+        return rhyming_verses_b
 
     def find_random_verse_a(verse_length, sentiment_target):
         found_random_verse = False
         while not found_random_verse:
-            random_index = randint(0, len(LIST_WORDS) - 1)
-            random_word = LIST_WORDS[random_index]
-            print(random_word)
-            verse_a = build_potential_verse_from_word(verse_length, random_index, sentiment_target)
+            random_index = randint(0, len(TEXT_LIST) - 1)
+            verse_a, random_word = build_potential_verse_from_word(verse_length, random_index, sentiment_target)
             if verse_a is not None:
                 found_random_verse = True
-        print(f"found verse_a: {verse_a}")
+        # print(f"found verse_a: {verse_a}")
         return verse_a, random_word
 
     found = False
@@ -121,21 +150,13 @@ def create_random_verse_pair(verse_length, sent_verse_a, sent_verse_b):
     verse_b = ""
     while not found:
         verse_a, random_word = find_random_verse_a(verse_length, sent_verse_a)
-        result_indices = find_rhyming_verses_b(random_word)
-        if result_indices != []:
-            verse_b_potential_list = []
-            for result_index in result_indices:
-                verse_b_potential = build_potential_verse_from_word(verse_length, result_index, "NEG")
-                if verse_b_potential is not None:
-                    verse_b_potential_list.append(verse_b_potential)
-                
-            if verse_b_potential_list != []:
-                difference = math.inf
-                for verse_b_potential in verse_b_potential_list:
-                    difference_potential = abs(len(verse_a) - len(verse_b_potential))
-                    if difference_potential < difference:
-                        difference = difference_potential
-                        verse_b = verse_b_potential
+        rhyming_verses_b = find_rhyming_verses_b(verse_length, random_word, sent_verse_b)
+        difference = math.inf
+        for verse_b_potential in rhyming_verses_b:
+            difference_potential = abs(len(verse_a) - len(verse_b_potential))
+            if difference_potential < difference:
+                difference = difference_potential
+                verse_b = verse_b_potential
             # length_verse_a = len(verse_a)
             # difference = length_verse_a
             # for result_index in result_indices:
