@@ -139,7 +139,7 @@ def create_matching_verse(verse_length, sent_verse_b, exclusion_set, verse_a, wo
                             count_match += 1
                         else:
                             break
-                    if count_match >= 3:
+                    if count_match >= 2:
                         verse_b_potential, _ = build_potential_verse_from_word(verse_length, i, sent_verse_b)
                         if verse_b_potential is not None:
                             rhyming_verses_b_word_list.append((count_match, verse_b_potential, word_b))
