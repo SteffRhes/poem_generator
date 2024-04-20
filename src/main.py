@@ -15,23 +15,23 @@ PUNCTUATION_MARKS = [".", ",", "!", "?", "…"]
 
 
 VERSE_STRUCTURE = [
-    [20, 30, 1, "POS"],
-    [20, 30, 1, "POS"],
-    [20, 30, 1, "NEG"],
+    [15, 25, 1, "POS"],
+    [15, 25, 1, "POS"],
+    [15, 25, 1, "NEG"],
     [40, 50, 2, "NEG"],
     [40, 50, 2, "NEG"],
     [30, 40, 3, "POS"],
     [30, 40, 4, "NEG"],
     [30, 40, 3, "POS"],
     [30, 40, 4, "NEG"],
-    [60, 70, 5, "NEG"],
-    [60, 70, 5, "NEG"],
-    [60, 70, 5, "NEG"],
-    [50, 60, 5, "POS"],
-    [20, 30, 6, "NEG"],
-    [20, 30, 7, "POS"],
-    [20, 30, 6, "NEG"],
-    [20, 30, 7, "POS"],
+    [40, 50, 5, "NEG"],
+    [40, 50, 5, "POS"],
+    [40, 50, 5, "NEG"],
+    [40, 50, 5, "POS"],
+    [15, 25, 6, "POS"],
+    [15, 25, 7, "NEG"],
+    [15, 25, 6, "POS"],
+    [15, 25, 7, "NEG"],
 ]
 
 
@@ -104,7 +104,7 @@ def build_potential_verse_from_word(verse_length, i, sentiment_target):
         
         if verse_potential is not None:
             sent_pred = PIPE(verse_potential)[0]
-            if sent_pred["label"] == sentiment_target and sent_pred["score"] > 0.8:
+            if sent_pred["label"] == sentiment_target and sent_pred["score"] > 0.9 and "@" not in verse_potential:
                 verse = verse_potential
     
     return verse, word
@@ -146,11 +146,12 @@ def create_matching_verse(verse_length, sent_verse_b, exclusion_set, verse_a, wo
                             count_match += 1
                         else:
                             break
-                    if count_match >= 3 and count_match <= 5:
+                    if count_match >= 3:
                         verse_b_potential, _ = build_potential_verse_from_word(verse_length, i, sent_verse_b)
                         if verse_b_potential is not None:
-                            rhyming_verses_b_word_list.append((verse_b_potential, word_b))
+                            rhyming_verses_b_word_list.append((count_match, verse_b_potential, word_b))
         
+        rhyming_verses_b_word_list = sorted(rhyming_verses_b_word_list, key=lambda x: - x[0])
         return rhyming_verses_b_word_list
     
     verse_b = None
@@ -158,10 +159,12 @@ def create_matching_verse(verse_length, sent_verse_b, exclusion_set, verse_a, wo
     rhyming_verses_b_word_list = create_all_matching_verses(verse_length, word_a, sent_verse_b)
     difference = math.inf
     if rhyming_verses_b_word_list != []:
+        count_match_highest = rhyming_verses_b_word_list[0][0]
         for verses_b_word_potential in rhyming_verses_b_word_list:
-            verse_b_potential = verses_b_word_potential[0]
-            word_b_potential = verses_b_word_potential[1]
-            if word_b_potential.upper() not in exclusion_set:
+            count_match = verses_b_word_potential[0]
+            verse_b_potential = verses_b_word_potential[1]
+            word_b_potential = verses_b_word_potential[2]
+            if word_b_potential.upper() not in exclusion_set and count_match == count_match_highest:
                 difference_potential = abs(len(verse_a) - len(verse_b_potential))
                 if difference_potential < difference:
                     difference = difference_potential
