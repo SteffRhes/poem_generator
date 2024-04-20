@@ -17,14 +17,14 @@ if IS_TESTING:
 
 
 VERSE_STRUCTURE = [
-    [10, 20, 1, "POS"],
-    [10, 20, 1, "POS"],
-    [15, 25, 1, "POS"],
-    [30, 40, 2, "NEG"],
-    [30, 40, 2, "NEG"],
-    [30, 40, 2, "NEG"],
-    [20, 30, 4, "POS"],
-    [20, 30, 4, "POS"],
+    # [10, 20, 1, "POS"],
+    # [10, 20, 1, "POS"],
+    # [15, 25, 1, "POS"],
+    # [30, 40, 2, "NEG"],
+    # [30, 40, 2, "NEG"],
+    # [30, 40, 2, "NEG"],
+    # [20, 30, 4, "POS"],
+    # [20, 30, 4, "POS"],
     [40, 50, 5, "POS"],
     [40, 50, 5, "POS"],
     [40, 50, 6, "NEG"],
@@ -110,7 +110,7 @@ def parse_and_index_text():
                 #     print(f"discard: {phrase}")
                 
                 
-def find_matching_verse(verse_length, verse_dict_a, exclusion_words_set):
+def find_matching_verses(verse_length, verse_dict_a):
     
     def not_contains_identical_words(word_list_a, word_list_b):
         if word_list_a[0] != word_list_b[0]:
@@ -124,10 +124,7 @@ def find_matching_verse(verse_length, verse_dict_a, exclusion_words_set):
     
     scores_verses_list = []
     for verse_dict_b in verse_dict_b_list:
-        if (
-            verse_dict_b["word_list_phonemes"][0] not in exclusion_words_set
-            and not_contains_identical_words(verse_dict_a["word_list_phonemes"], verse_dict_b["word_list_phonemes"])
-        ):
+        if not_contains_identical_words(verse_dict_a["word_list_phonemes"], verse_dict_b["word_list_phonemes"]):
             score = 0
             phonemes_list_a = verse_dict_a["phonemes"]
             phonemes_list_b = verse_dict_b["phonemes"]
@@ -145,7 +142,7 @@ def find_matching_verse(verse_length, verse_dict_a, exclusion_words_set):
     
     scores_verses_list = sorted(scores_verses_list, key=lambda x: - x[1])
     if scores_verses_list != []:
-        return scores_verses_list[0]
+        return scores_verses_list
     else:
         return None
     
@@ -260,76 +257,61 @@ def create_matching_verse(verse_length, sent_verse_b, exclusion_set, verse_a, wo
     return (verse_b, word_b, exclusion_set)
 
     
-def create_group(limit, verse_struct, exclusion_set):
-    verse_current = None
-    word_current = None
-    results = []
-    count_current = 0
-    exclusion_set_current = exclusion_set.copy()
-    while count_current < limit:
-        if verse_current is None and word_current is None:
-            count_current = 0
-            verse_current, word_current = create_random_verse(
-                (verse_struct[count_current][0], verse_struct[count_current][1]),
-                verse_struct[count_current][3]
-            )
-            results = [verse_current]
-            count_current += 1
-            exclusion_set_current = {word_current.upper()}
-        else:
-            verse_current, word_current, exclusion_set_current = create_matching_verse(
-                (verse_struct[count_current][0], verse_struct[count_current][1]),
-                verse_struct[count_current][3],
-                exclusion_set_current,
-                verse_current,
-                word_current,
-            )
-            if verse_current is not None:
-                results.append(verse_current)
-                count_current += 1
+def create_group(limit, verse_struct, exclusion_words_set):
+    # TODO verse_length should not be hardcoded to the first target
+    verse_length = (verse_struct[0][0], verse_struct[0][1])
+    verses_dict_a_list = []
+    for vl in range(verse_length[0], verse_length[1]):
+        verses_dict_a_list.extend(INDEX_VERSES[vl])
+    random.shuffle(verses_dict_a_list)
+        
+    verses_dict_b_list = []
+    for verses_dict_a in verses_dict_a_list:
+        exclusion_words_set_tmp = exclusion_words_set.copy()
+        exclusion_words_set_tmp.add(verses_dict_a["word_list_phonemes"][0])
+        result = find_matching_verses(verse_length, verses_dict_a)
+        if result is not None and len(result) >= limit - 1:
+            num_found = 1
+            for i in range(limit - 1):
+                verses_dict_b = result[i][0]
+                if verses_dict_b["word_list_phonemes"][0] not in exclusion_words_set_tmp:
+                    exclusion_words_set_tmp.add(verses_dict_b["word_list_phonemes"][0])
+                    verses_dict_b_list.append(verses_dict_b)
+                    num_found += 1
+                    
+            if num_found == limit:
+                exclusion_words_set = exclusion_words_set_tmp
+                break
     
-    return results, exclusion_set_current.copy()
-
+    return ([verses_dict_a] + verses_dict_b_list, exclusion_words_set)
+    
 
 def main():
     build_word_to_phoneme()
     parse_and_index_text()
     
-    verses_dict_list = INDEX_VERSES[20]
-    exclusion_words_set = set()
-    while True:
-        random_index = random.randint(0, len(verses_dict_list))
-        verse_dict_a_random = verses_dict_list[random_index]
-        result = find_matching_verse((18,22), verse_dict_a_random, exclusion_words_set)
-        if result is not None:
-            verse_dict_b_matching, score = result
-            print(verse_dict_a_random["text"])
-            print(verse_dict_b_matching["text"])
-            print("-------")
-        
-    
-    # exclusion_set = set()
-    # groups_count_dict = {}
-    # for verse_struct in VERSE_STRUCTURE:
-    #     group_count = groups_count_dict.get(verse_struct[2], 0)
-    #     groups_count_dict[verse_struct[2]] = group_count + 1
-    #
-    # groups_verses_dict = {}
-    # for k, v in groups_count_dict.items():
-    #     verse_struct_list = []
-    #     for verse_struct in VERSE_STRUCTURE:
-    #         if verse_struct[2] == k:
-    #             verse_struct_list.append(verse_struct)
-    #     results, exclusion_set = create_group(v, verse_struct_list, exclusion_set)
-    #     groups_verses_dict[k] = results
-    #
-    # verse_list_all = []
-    # for verse_struct in VERSE_STRUCTURE:
-    #     verses_list = groups_verses_dict[verse_struct[2]]
-    #     verse = verses_list[0]
-    #     del verses_list[0]
-    #     verse_list_all.append(verse)
-    #     print(verse)
+    exclusion_set = set()
+    groups_count_dict = {}
+    for verse_struct in VERSE_STRUCTURE:
+        group_count = groups_count_dict.get(verse_struct[2], 0)
+        groups_count_dict[verse_struct[2]] = group_count + 1
+
+    groups_verses_dict = {}
+    for k, v in groups_count_dict.items():
+        verse_struct_list = []
+        for verse_struct in VERSE_STRUCTURE:
+            if verse_struct[2] == k:
+                verse_struct_list.append(verse_struct)
+        results, exclusion_set = create_group(v, verse_struct_list, exclusion_set)
+        groups_verses_dict[k] = [r["text"] for r in results]
+
+    verse_list_all = []
+    for verse_struct in VERSE_STRUCTURE:
+        verses_list = groups_verses_dict[verse_struct[2]]
+        verse = verses_list[0]
+        del verses_list[0]
+        verse_list_all.append(verse)
+        print(verse)
     #
     # with open("../README.md", "a") as f:
     #     f.write("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
