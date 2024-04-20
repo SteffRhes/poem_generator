@@ -58,14 +58,6 @@ def parse_input_text():
             TEXT_LIST.append(line)
             line = file.readline()
             i += 1
-            # for word in line.split(" "):
-            #     word = re.sub(r"""\n|\(|\)|\"|”|“""", "", word)
-            #     word = word.lstrip(".")
-            #     if "http" not in word and word != "" and word != "-" and word != "–":
-            #         PHRASES_LIST.append(word)
-            #
-            # line = file.readline()
-            # i += 1
 
 
 def create_random_verse(verse_length, sentiment_target):
@@ -76,6 +68,7 @@ def create_random_verse(verse_length, sentiment_target):
         if verse_a is not None:
             found_random_verse = True
     return verse_a, random_word
+    
     
 def build_potential_verse_from_word(verse_length, i, sentiment_target):
     verse = None
