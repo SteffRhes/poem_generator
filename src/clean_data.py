@@ -4,6 +4,7 @@ import sys
 
 csv.field_size_limit(sys.maxsize)
 PUNCTUATION_MARKS = [".", ",", "!", "?", "…"]
+YEARS_TO_FILTER = ["2019", "2020", "2021", "2022", "2023", "2024"]
 
 
 def main():
@@ -16,7 +17,8 @@ def main():
             text = row[1].replace("\n", "")
             if text[-1] not in PUNCTUATION_MARKS:
                 text += "."
-            texts_twitter.append(text)
+            if row[9][:4] in YEARS_TO_FILTER:
+                texts_twitter.append(text)
     print(f"number of twitter texts: {len(texts_twitter)}")
 
     # truth_social
@@ -32,7 +34,8 @@ def main():
                 text = row.split(search_str)[0].split("\t")[-3].replace("\n", "")
                 if text[-1] not in PUNCTUATION_MARKS:
                     text += "."
-                texts_truth.append(text)
+                if row.split("\t")[1][:4] in YEARS_TO_FILTER:
+                    texts_truth.append(text)
     print(f"number of truth social texts: {len(texts_truth)}")
 
     # write
