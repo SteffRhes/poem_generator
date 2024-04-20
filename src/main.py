@@ -7,10 +7,10 @@ from transformers import pipeline
 PIPE = pipeline("text-classification", model="finiteautomata/bertweet-base-sentiment-analysis")
 DICT_FILEPATH = "../data/cmu_pronouncing_dictionary.txt"
 RAW_INPUT_TEXT_FILEPATH  = "../data/cleaned_text_only.txt"
-LIMIT_TEXT_LINES = 10000
+LIMIT_TEXT_LINES = None
 DICT_WORD_TO_PHONEMES = {}
 TEXT_LIST = []
-VERSE_LENGTHS = [(10, 30), (10, 30), (10, 20)]
+VERSE_LENGTHS = [(20, 35), (20, 35), (10, 20), (10, 20)]
 SENTIMENT = ["POS"]
 PUNCTUATION_MARKS = [".", ",", "!", "?", "…"]
 
@@ -116,7 +116,7 @@ def create_random_verse_pair(verse_length, exclusion_set, sent_verse_a, sent_ver
                             count_match += 1
                         else:
                             break
-                    if count_match >= 3 and count_match <= 5:
+                    if count_match >= 4 and count_match <= 5:
                         verse_b_potential, _ = build_potential_verse_from_word(verse_length, i, sent_verse_b)
                         if verse_b_potential is not None:
                             rhyming_verses_b_word_list.append((verse_b_potential, word_b))
