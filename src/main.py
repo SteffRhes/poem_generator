@@ -4,15 +4,16 @@ import random
 from transformers import pipeline
 
 
-random.seed(42)
-SHOW_PRINTS = True
 PIPE = pipeline("text-classification", model="finiteautomata/bertweet-base-sentiment-analysis")
+IS_TESTING = True
 DICT_FILEPATH = "../data/cmu_pronouncing_dictionary.txt"
 RAW_INPUT_TEXT_FILEPATH  = "../data/cleaned_text_only.txt"
 LIMIT_TEXT_LINES = None
 DICT_WORD_TO_PHONEMES = {}
-INDEX_PHRASES = []
+INDEX_VERSES = {}
 PUNCTUATION_MARKS = [".", ",", "!", "?", "…"]
+if IS_TESTING:
+    random.seed(42)
 
 
 VERSE_STRUCTURE = [
@@ -49,26 +50,110 @@ def build_word_to_phoneme():
 
 
 def parse_and_index_text():
-    global INDEX_PHRASES
+    
+    def create_value_for_phonemes(phonemes_list):
+        phonemes_values_list = []
+        n = len(phonemes_list)
+        if n > 1:
+            step = 1 / (n - 1)
+            score_current = 1
+            for i in range(n):
+                phonemes_values_list.append(score_current)
+                score_current -= step
+            phonemes_values_list[-1] = 0
+        else:
+            phonemes_values_list.append(1)
+        return phonemes_values_list
+    
+    global INDEX_VERSES
     with open(RAW_INPUT_TEXT_FILEPATH) as f:
         for line in f:
             line_split = re.split(r"(?<=[^\w\s])", line)
+            phrase_already_parsed_set = set()
             for phrase in line_split:
+                phrase = phrase.strip()
                 if len(phrase.strip()) >= 5 and phrase[-1] in PUNCTUATION_MARKS + ["-", "'", '"', "“"]:
-                    last_word = re.split(r"\s+", phrase[:-1])[-1]
-                    if last_word.upper() in DICT_WORD_TO_PHONEMES and len(phrase.strip()) >= 5:
-                        print(phrase)
-                else:
-                    if SHOW_PRINTS:
-                        print(f"discard: {phrase}")
-            INDEX_PHRASES.append(line)
-    raise Exception
-
+                    word_list_all = re.split(r"[^\w]", phrase[:-1])
+                    word_list_phonemes = []
+                    phonemes_phrase = []
+                    for word in word_list_all:
+                        phonemes_word = DICT_WORD_TO_PHONEMES.get(word.upper())
+                        if phonemes_word is not None:
+                            phonemes_phrase.extend(phonemes_word)
+                            word_list_phonemes.append(word.upper())
+                    if phonemes_phrase != [] and phrase not in phrase_already_parsed_set:
+                        phrase_already_parsed_set.add(phrase)
+                        phonemes_phrase_inverted = phonemes_phrase[-1::-1]
+                        phrases_dict_list_for_len = INDEX_VERSES.get(len(phrase), [])
+                        if IS_TESTING:
+                            is_pos = random.randint(0, 1)
+                            if is_pos:
+                                text_sent = "POS"
+                            else:
+                                text_sent = "NEG"
+                        else:
+                            # TODO: real sentiment analysis
+                            text_sent = None
+                        
+                        verse_dict = {
+                            "text": phrase,
+                            "text_sent": text_sent,
+                            "word_list_phonemes": word_list_phonemes[-1::-1],
+                            "phonemes": phonemes_phrase_inverted,
+                            # "phonemes_value": [],
+                        }
+                        # verse_dict["phonemes_value"] = create_value_for_phonemes(verse_dict["phonemes"])
+                        phrases_dict_list_for_len.append(verse_dict)
+                        INDEX_VERSES[len(phrase)] = phrases_dict_list_for_len
+                        
+                # elif IS_TESTING:
+                #     print(f"discard: {phrase}")
+                
+                
+def find_matching_verse(verse_length, verse_dict_a, exclusion_words_set):
+    
+    def not_contains_identical_words(word_list_a, word_list_b):
+        if word_list_a[0] != word_list_b[0]:
+            return True
+        else:
+            return False
+    
+    verse_dict_b_list = []
+    for vl in range(verse_length[0], verse_length[1] + 1):
+        verse_dict_b_list.extend(INDEX_VERSES[vl])
+    
+    scores_verses_list = []
+    for verse_dict_b in verse_dict_b_list:
+        if (
+            verse_dict_b["word_list_phonemes"][0] not in exclusion_words_set
+            and not_contains_identical_words(verse_dict_a["word_list_phonemes"], verse_dict_b["word_list_phonemes"])
+        ):
+            score = 0
+            phonemes_list_a = verse_dict_a["phonemes"]
+            phonemes_list_b = verse_dict_b["phonemes"]
+            len_half_avg = int((len(phonemes_list_a) + len(phonemes_list_b)) / 4)
+            for i in range(1, len_half_avg - 1):
+                for j in (i - 1, i + 1):
+                    for k in (i - 1, i + 1):
+                        if (
+                            j < len(phonemes_list_a) and k < len(phonemes_list_b)
+                            and phonemes_list_a[j] == phonemes_list_b[k]
+                        ):
+                            score += 1 / i
+            if score > 4:
+                scores_verses_list.append((verse_dict_b, score))
+    
+    scores_verses_list = sorted(scores_verses_list, key=lambda x: - x[1])
+    if scores_verses_list != []:
+        return scores_verses_list[0]
+    else:
+        return None
+    
 
 def create_random_verse(verse_length, sentiment_target):
     found_random_verse = False
     while not found_random_verse:
-        random_index = random.randint(0, len(INDEX_PHRASES) - 1)
+        random_index = random.randint(0, len(INDEX_VERSES) - 1)
         verse_a, random_word = build_potential_verse_from_word(verse_length, random_index, sentiment_target)
         if verse_a is not None:
             found_random_verse = True
@@ -77,7 +162,7 @@ def create_random_verse(verse_length, sentiment_target):
     
 def build_potential_verse_from_word(verse_length, i, sentiment_target):
     verse = None
-    text = INDEX_PHRASES[i]
+    text = INDEX_VERSES[i]
     word, word_i_end = get_last_word_of_text(text)
     if word.upper() in DICT_WORD_TO_PHONEMES:
         verse_potential = ""
@@ -129,8 +214,8 @@ def create_matching_verse(verse_length, sent_verse_b, exclusion_set, verse_a, wo
     def create_all_matching_verses(verse_length, word_a, sent_verse_b):
         rhyming_verses_b_word_list = []
         phonemes_a_to_match = DICT_WORD_TO_PHONEMES[word_a.upper()]
-        for i in range(len(INDEX_PHRASES)):
-            word_b, _ = get_last_word_of_text(INDEX_PHRASES[i])
+        for i in range(len(INDEX_VERSES)):
+            word_b, _ = get_last_word_of_text(INDEX_VERSES[i])
             if word_b.upper() != word_a.upper():
                 phonemes_b_to_match = DICT_WORD_TO_PHONEMES.get(word_b.upper())
                 if phonemes_b_to_match is not None:
@@ -210,35 +295,48 @@ def main():
     build_word_to_phoneme()
     parse_and_index_text()
     
-    exclusion_set = set()
-    groups_count_dict = {}
-    for verse_struct in VERSE_STRUCTURE:
-        group_count = groups_count_dict.get(verse_struct[2], 0)
-        groups_count_dict[verse_struct[2]] = group_count + 1
-    
-    groups_verses_dict = {}
-    for k, v in groups_count_dict.items():
-        verse_struct_list = []
-        for verse_struct in VERSE_STRUCTURE:
-            if verse_struct[2] == k:
-                verse_struct_list.append(verse_struct)
-        results, exclusion_set = create_group(v, verse_struct_list, exclusion_set)
-        groups_verses_dict[k] = results
-    
-    verse_list_all = []
-    for verse_struct in VERSE_STRUCTURE:
-        verses_list = groups_verses_dict[verse_struct[2]]
-        verse = verses_list[0]
-        del verses_list[0]
-        verse_list_all.append(verse)
-        print(verse)
+    verses_dict_list = INDEX_VERSES[20]
+    exclusion_words_set = set()
+    while True:
+        random_index = random.randint(0, len(verses_dict_list))
+        verse_dict_a_random = verses_dict_list[random_index]
+        result = find_matching_verse((18,22), verse_dict_a_random, exclusion_words_set)
+        if result is not None:
+            verse_dict_b_matching, score = result
+            print(verse_dict_a_random["text"])
+            print(verse_dict_b_matching["text"])
+            print("-------")
         
-    with open("../README.md", "a") as f:
-        f.write("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
-        f.write("```\n")
-        for verse in verse_list_all:
-            f.write(verse + "\n")
-        f.write("```\n")
+    
+    # exclusion_set = set()
+    # groups_count_dict = {}
+    # for verse_struct in VERSE_STRUCTURE:
+    #     group_count = groups_count_dict.get(verse_struct[2], 0)
+    #     groups_count_dict[verse_struct[2]] = group_count + 1
+    #
+    # groups_verses_dict = {}
+    # for k, v in groups_count_dict.items():
+    #     verse_struct_list = []
+    #     for verse_struct in VERSE_STRUCTURE:
+    #         if verse_struct[2] == k:
+    #             verse_struct_list.append(verse_struct)
+    #     results, exclusion_set = create_group(v, verse_struct_list, exclusion_set)
+    #     groups_verses_dict[k] = results
+    #
+    # verse_list_all = []
+    # for verse_struct in VERSE_STRUCTURE:
+    #     verses_list = groups_verses_dict[verse_struct[2]]
+    #     verse = verses_list[0]
+    #     del verses_list[0]
+    #     verse_list_all.append(verse)
+    #     print(verse)
+    #
+    # with open("../README.md", "a") as f:
+    #     f.write("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
+    #     f.write("```\n")
+    #     for verse in verse_list_all:
+    #         f.write(verse + "\n")
+    #     f.write("```\n")
         
 
 if __name__ == "__main__":
