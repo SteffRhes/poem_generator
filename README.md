@@ -106,3 +106,47 @@ I love you too!
 She was a terrible A.
 This can not stand.
 ```
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
+Interesting!
+ballot harvesting,
+s incredible endorsem…
+more affordable,
+and most credible,
+And sooo many other false statements.
+forth over the legal arguments,
+and Strengthen our Military.
+Much was non monetary.
+A great time to have strong Borders,
+s Shutdown Orders Unconstitution…
+This is a disgraceful spectacle.
+This is no time for political…
+and great achievements…
+lose documents,
+Complete Endorsement!
+Law Enforcement,
+in the basement'
+```
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
+Good solution,
+resolution-
+Very Favorable'
+not recoverable!
+it should be intolerable,
+Schiff is a Corrupt Politician!
+keep up with the competition -
+Strengthen our Military,
+Much was non monetary.
+Daniel Collins will be an outstanding.
+and the audience is expanding.
+overwhelming will mean obliteration.
+Complete and Total EXONERATION.
+and still easily won,
+is totally one-
+Total Endorsement!
+Video Conference -
+Law Enforcement,
+```

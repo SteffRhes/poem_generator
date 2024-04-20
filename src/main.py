@@ -10,7 +10,7 @@ LIMIT_TEXT_LINES = None
 DICT_WORD_TO_PHONEMES = {}
 INDEX_VERSES = {}
 PUNCTUATION_MARKS = [".", ",", "!", "?", "…"]
-IS_TESTING = True
+IS_TESTING = False
 if IS_TESTING:
     # random.seed(42)
     PIPE = None
