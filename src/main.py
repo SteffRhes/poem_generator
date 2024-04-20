@@ -10,7 +10,7 @@ RAW_INPUT_TEXT_FILEPATH  = "../data/cleaned_text_only.txt"
 LIMIT_TEXT_LINES = 10000
 DICT_WORD_TO_PHONEMES = {}
 TEXT_LIST = []
-VERSE_LENGTHS = [(20, 40), (20, 40), (10, 20)]
+VERSE_LENGTHS = [(10, 30), (10, 30), (10, 20)]
 SENTIMENT = ["POS"]
 PUNCTUATION_MARKS = [".", ",", "!", "?", "…"]
 
@@ -48,7 +48,7 @@ def parse_input_text():
             # i += 1
 
 
-def create_random_verse_pair(verse_length, sent_verse_a, sent_verse_b):
+def create_random_verse_pair(verse_length, exclusion_set, sent_verse_a, sent_verse_b):
     
     def get_last_word_of_text(text):
         word = ""
@@ -99,12 +99,12 @@ def create_random_verse_pair(verse_length, sent_verse_a, sent_verse_b):
         return verse, word
 
     def find_rhyming_verses_b(verse_length, word_a, sent_verse_b):
-        rhyming_verses_b = []
+        rhyming_verses_b_word_list = []
         phonemes_a_to_match = DICT_WORD_TO_PHONEMES[word_a.upper()]
         for i in range(len(TEXT_LIST)):
-            word_b_potential, _ = get_last_word_of_text(TEXT_LIST[i])
-            if word_b_potential.upper() != word_a.upper():
-                phonemes_b_to_match = DICT_WORD_TO_PHONEMES.get(word_b_potential.upper())
+            word_b, _ = get_last_word_of_text(TEXT_LIST[i])
+            if word_b.upper() != word_a.upper():
+                phonemes_b_to_match = DICT_WORD_TO_PHONEMES.get(word_b.upper())
                 if phonemes_b_to_match is not None:
                     if len(phonemes_a_to_match) < len(phonemes_b_to_match):
                         limit = len(phonemes_a_to_match)
@@ -119,21 +119,9 @@ def create_random_verse_pair(verse_length, sent_verse_a, sent_verse_b):
                     if count_match >= 3 and count_match <= 5:
                         verse_b_potential, _ = build_potential_verse_from_word(verse_length, i, sent_verse_b)
                         if verse_b_potential is not None:
-                            rhyming_verses_b.append(verse_b_potential)
-                
-            #             list_indices = []
-            #             if count_match in dict_matches:
-            #                 list_indices = dict_matches[count_match]
-            #             list_indices.append(i)
-            #             dict_matches[count_match] = list_indices
-            #
-            # if dict_matches:
-            #     list_match_keys = list(dict_matches.keys())
-            #     max_count_match = max(list_match_keys)
-            #     # print("highest count_match:", max_count_match)
-            #     result_indices = dict_matches[max_count_match]
+                            rhyming_verses_b_word_list.append((verse_b_potential, word_b))
 
-        return rhyming_verses_b
+        return rhyming_verses_b_word_list
 
     def find_random_verse_a(verse_length, sentiment_target):
         found_random_verse = False
@@ -147,36 +135,31 @@ def create_random_verse_pair(verse_length, sent_verse_a, sent_verse_b):
 
     found = False
     verse_a = ""
+    word_a = ""
     verse_b = ""
+    word_b = ""
     while not found:
-        verse_a, random_word = find_random_verse_a(verse_length, sent_verse_a)
-        rhyming_verses_b = find_rhyming_verses_b(verse_length, random_word, sent_verse_b)
-        difference = math.inf
-        for verse_b_potential in rhyming_verses_b:
-            difference_potential = abs(len(verse_a) - len(verse_b_potential))
-            if difference_potential < difference:
-                difference = difference_potential
-                verse_b = verse_b_potential
-            # length_verse_a = len(verse_a)
-            # difference = length_verse_a
-            # for result_index in result_indices:
-            #     # TODO verse_length
-            #     verse_b_tmp = " ".join([LIST_WORDS[i] for i in range(result_index - verse_length + 1, result_index + 1)])
-            #     sent_verse_b_real = PIPE(verse_b_tmp)[0]["label"]
-            #     if (
-            #         not any( char in verse_b_tmp[:-1] for char in [". ", "! ", "? ", ] )
-            #         and sent_verse_b_real == sent_verse_b
-            #     ):
-            #         length_verse_b = len(verse_b_tmp)
-            #         difference_potential = abs(length_verse_a - length_verse_b)
-            #         if difference_potential < difference:
-            #             difference = difference_potential
-            #             verse_b = verse_b_tmp
+        verse_a, word_a = find_random_verse_a(verse_length, sent_verse_a)
+        if word_a.upper() not in exclusion_set:
+            rhyming_verses_b_word_list = find_rhyming_verses_b(verse_length, word_a, sent_verse_b)
+            if rhyming_verses_b_word_list != []:
+                difference = math.inf
+                for verses_b_word_potential in rhyming_verses_b_word_list:
+                    verse_b_potential = verses_b_word_potential[0]
+                    word_b_potential = verses_b_word_potential[1]
+                    if word_b_potential.upper() not in exclusion_set:
+                        difference_potential = abs(len(verse_a) - len(verse_b_potential))
+                        if difference_potential < difference:
+                            difference = difference_potential
+                            verse_b = verse_b_potential
+                            word_b = word_b_potential
+            
+                        if verse_b != "":
+                            found = True
 
-            if verse_b != "":
-                found = True
-
-    return (verse_a, verse_b)
+    exclusion_set.add(word_a.upper())
+    exclusion_set.add(word_b.upper())
+    return (verse_a, verse_b, exclusion_set)
 
 
 def clean_and_print_verses(verses):
@@ -226,8 +209,10 @@ def main():
     build_word_to_phoneme()
     parse_input_text()
     verses = []
+    exclusion_set = set()
     for vl in VERSE_LENGTHS:
-        verses.append(create_random_verse_pair(vl, "POS", "NEG"))
+        verse_a, verse_b, exclusion_set = create_random_verse_pair(vl, exclusion_set, "POS", "NEG")
+        verses.append((verse_a, verse_b))
     clean_and_print_verses(verses)
 
 
