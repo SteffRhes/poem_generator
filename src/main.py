@@ -1,45 +1,22 @@
 import math
+import pickle
 import random
 import re
 
 from transformers import pipeline
 
-from config import DICT_FILEPATH, IS_TESTING, RAW_INPUT_TEXT_FILEPATH, VERSE_STRUCTURE
+from config import DICT_FILEPATH, INDEX_VERSES_FILEPATH, IS_TESTING, RAW_INPUT_TEXT_FILEPATH, SHOULD_CREATE_INDEX, SHLOULD_LOAD_INDEX, \
+    VERSE_STRUCTURE
 
-DICT_WORD_TO_PHONEMES = {}
-INDEX_VERSES = {}
+DICT_WORD_TO_PHONEMES = None
+INDEX_VERSES = None
+PIPE = None
 PUNCTUATION_MARKS = [".", ",", "!", "?", "…"]
-if IS_TESTING:
-    random.seed(42)
-    PIPE = None
-else:
-    PIPE = pipeline("text-classification", model="finiteautomata/bertweet-base-sentiment-analysis")
-
-VERSE_STRUCTURE = [
-    [10, 20, 1, "POS"],
-    [10, 20, 1, "POS"],
-    [15, 25, 2, "POS"],
-    [30, 40, 2, "NEG"],
-    [30, 40, 2, "NEG"],
-    [30, 40, 3, "NEG"],
-    [20, 30, 3, "POS"],
-    [20, 30, 4, "POS"],
-    [30, 40, 4, "POS"],
-    [30, 40, 5, "POS"],
-    [30, 40, 5, "NEG"],
-    [30, 40, 6, "NEG"],
-    [30, 40, 6, "NEG"],
-    [15, 25, 7, "POS"],
-    [15, 25, 7, "NEG"],
-    [15, 25, 8, "POS"],
-    [15, 25, 8, "NEG"],
-    [15, 25, 8, "NEG"],
-]
-
 
 
 def build_word_to_phoneme():
     global DICT_WORD_TO_PHONEMES
+    DICT_WORD_TO_PHONEMES = {}
     with open(DICT_FILEPATH) as file:
         for line in file:
             list_tmp = line.split()
@@ -65,6 +42,7 @@ def parse_and_index_text():
         return phonemes_values_list
     
     global INDEX_VERSES
+    INDEX_VERSES = {}
     with open(RAW_INPUT_TEXT_FILEPATH) as f:
         for line in f:
             line_split = re.split(r"(?<=[^\w\s])", line)
@@ -85,15 +63,12 @@ def parse_and_index_text():
                         phonemes_phrase_inverted = phonemes_phrase[-1::-1]
                         phrases_dict_list_for_len = INDEX_VERSES.get(len(phrase), [])
                         if IS_TESTING:
-                            is_pos = random.randint(0, 1)
-                            if is_pos:
+                            if random.randint(0, 1):
                                 text_sent = "POS"
                             else:
                                 text_sent = "NEG"
                         else:
-                            # TODO: refactor
-                            # text_sent = PIPE(phrase)[0]
-                            text_sent = None
+                            text_sent = PIPE(phrase)[0]
                         verse_dict = {
                             "text": phrase,
                             "text_sent": text_sent,
@@ -109,6 +84,17 @@ def parse_and_index_text():
                 #     print(f"discard: {phrase}")
                 
                 
+def load_index():
+    with open(INDEX_VERSES_FILEPATH, "rb") as f:
+        global INDEX_VERSES
+        INDEX_VERSES = pickle.load(f)
+        
+        
+def persist_index():
+    with open(INDEX_VERSES_FILEPATH, "wb") as f:
+        pickle.dump(INDEX_VERSES, f)
+        
+        
 def find_matching_verses(verse_length, verse_dict_a):
     
     def not_contains_identical_words(word_list_a, word_list_b):
@@ -331,8 +317,19 @@ def create_group(limit, verse_struct, exclusion_words_set):
     
 
 def main():
-    build_word_to_phoneme()
-    parse_and_index_text()
+    if IS_TESTING:
+        random.seed(42)
+    else:
+        global PIPE
+        PIPE = pipeline("text-classification", model="finiteautomata/bertweet-base-sentiment-analysis")
+        
+    if SHOULD_CREATE_INDEX:
+        build_word_to_phoneme()
+        parse_and_index_text()
+        persist_index()
+        
+    if SHLOULD_LOAD_INDEX:
+        load_index()
     
     exclusion_set = set()
     groups_count_dict = {}
