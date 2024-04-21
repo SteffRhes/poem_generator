@@ -172,3 +172,47 @@ I WON THE ELECTION!
 Corrupt politicians,
 No sense of direction.
 ```
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
+Big crowd expected!
+apparatus perfected.
+Congratulations!
+8 MILLION infected 274,
+This is Treason,
+And sooo many other false statements.
+A perfect night of Endorsements,
+much stronger position'
+A highly respected physician,
+Steve has my Complete Endorsement!
+Unlimited Presidential Harassment.
+KennedyNation Totally illegal!
+What they are doing is not legal.
+Stanley was charitable,
+s disreputable,
+I WON THE ELECTION!
+8 MILLION infected 274,
+Foolish executives!
+```
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+```
+happening anyway!
+sound horrible,
+Illegal Immigration.
+is NO DIFFERENT than the horrible,
+trying to make it sound terrible,
+Baltimore is the WORST IN NATION,
+big Conservative discrimination!
+Rigged Elections,
+it should be intolerable,
+disgusting actions!
+not recoverable!
+this is not playing so well anymore?
+and was plotting to kill many more.
+Rigged Election!
+No sense of direction.
+false allegations,
+A USA embarrassment!
+A USA embarrassment!
+```
