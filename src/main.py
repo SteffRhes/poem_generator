@@ -1,22 +1,19 @@
-import re
 import math
 import random
+import re
+
 from transformers import pipeline
 
+from config import DICT_FILEPATH, IS_TESTING, RAW_INPUT_TEXT_FILEPATH, VERSE_STRUCTURE
 
-DICT_FILEPATH = "../data/cmu_pronouncing_dictionary.txt"
-RAW_INPUT_TEXT_FILEPATH  = "../data/cleaned_text_only.txt"
-LIMIT_TEXT_LINES = None
 DICT_WORD_TO_PHONEMES = {}
 INDEX_VERSES = {}
 PUNCTUATION_MARKS = [".", ",", "!", "?", "…"]
-IS_TESTING = False
 if IS_TESTING:
-    # random.seed(42)
+    random.seed(42)
     PIPE = None
 else:
     PIPE = pipeline("text-classification", model="finiteautomata/bertweet-base-sentiment-analysis")
-
 
 VERSE_STRUCTURE = [
     [10, 20, 1, "POS"],
