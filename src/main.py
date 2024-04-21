@@ -34,8 +34,7 @@ DICT_WORD_TO_PHONEMES = None
 INDEX_VERSES = None
 PIPE = None
 IS_TESTING = True
-IS_CREATING_INDEX = False
-IS_LOADING_INDEX = True
+IS_CREATING_INDEX = True
 
 
 def parse_and_index_text():
@@ -44,9 +43,16 @@ def parse_and_index_text():
         global DICT_WORD_TO_PHONEMES
         DICT_WORD_TO_PHONEMES = {}
         with open(DICT_FILEPATH) as file:
-            for line in file:
-                list_tmp = line.split()
-                DICT_WORD_TO_PHONEMES[list_tmp[0]] = list_tmp[1:]
+            for i, line in enumerate(file):
+                if i >= 54:
+                    line_split = line.split()
+                    word = line_split[0]
+                    phonemes = []
+                    for c in line_split[1:]:
+                        if c[-1] in ["0", "1", "2"]:
+                            c = c[:-1]
+                        phonemes.append(c)
+                    DICT_WORD_TO_PHONEMES[word] = phonemes
     
     def create_value_for_phonemes(phonemes_list):
         phonemes_values_list = []
@@ -218,7 +224,7 @@ def main():
             with open(INDEX_VERSES_FILEPATH, "wb") as f:
                 pickle.dump(INDEX_VERSES, f)
         
-        if IS_LOADING_INDEX:
+        else:
             with open(INDEX_VERSES_FILEPATH, "rb") as f:
                 INDEX_VERSES = pickle.load(f)
         
