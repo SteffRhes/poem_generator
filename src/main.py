@@ -7,41 +7,39 @@ from transformers import pipeline
 
 
 VERSE_STRUCTURE = [
-    [10, 20, 1, "NEG"],
-    [10, 20, 1, "NEG"],
-    [15, 25, 1, "NEG"],
-    [30, 40, 2, "NEG"],
-    [30, 40, 2, "NEG"],
-    [30, 40, 3, "NEG"],
-    [20, 30, 3, "NEG"],
-    [15, 30, 4, "NEG"],
-    [15, 30, 5, "NEG"],
-    [15, 30, 4, "NEG"],
-    [15, 30, 5, "NEG"],
-    [30, 40, 6, "NEG"],
-    [30, 40, 6, "NEG"],
-    [15, 25, 7, "NEG"],
-    [15, 25, 7, "NEG"],
-    [15, 25, 8, "NEG"],
-    [15, 25, 8, "NEG"],
-    [15, 25, 8, "NEG"],
+    [20, 30, 1, "NEG"],
+    [20, 30, 1, "NEG"],
+    # [15, 25, 1, "NEG"],
+    # [30, 40, 2, "NEG"],
+    # [30, 40, 2, "NEG"],
+    # [30, 40, 3, "NEG"],
+    # [20, 30, 3, "NEG"],
+    # [15, 30, 4, "NEG"],
+    # [15, 30, 5, "NEG"],
+    # [15, 30, 4, "NEG"],
+    # [15, 30, 5, "NEG"],
+    # [30, 40, 6, "NEG"],
+    # [30, 40, 6, "NEG"],
+    # [15, 25, 7, "NEG"],
+    # [15, 25, 7, "NEG"],
+    # [15, 25, 8, "NEG"],
+    # [15, 25, 8, "NEG"],
+    # [15, 25, 8, "NEG"],
 ]
 PUNCTUATION_MARKS = [".", ",", "!", "?", "…"]
 DICT_FILEPATH = "../data/cmu_pronouncing_dictionary.txt"
 RAW_INPUT_TEXT_FILEPATH  = "../data/cleaned_text_only.txt"
 INDEX_VERSES_FILEPATH = "../data/index/index_1.pickle"
-DICT_WORD_TO_PHONEMES = None
 INDEX_VERSES = None
 PIPE = None
 IS_TESTING = True
-IS_CREATING_INDEX = True
+IS_CREATING_INDEX = False
 
 
 def parse_and_index_text():
     
-    def build_word_to_phoneme_dict():
-        global DICT_WORD_TO_PHONEMES
-        DICT_WORD_TO_PHONEMES = {}
+    def create_word_to_phoneme_dict():
+        word_to_phoneme_dict = {}
         with open(DICT_FILEPATH) as file:
             for i, line in enumerate(file):
                 if i >= 54:
@@ -52,7 +50,9 @@ def parse_and_index_text():
                         if c[-1] in ["0", "1", "2"]:
                             c = c[:-1]
                         phonemes.append(c)
-                    DICT_WORD_TO_PHONEMES[word] = phonemes
+                    word_to_phoneme_dict[word] = phonemes
+                    
+        return word_to_phoneme_dict
     
     def create_value_for_phonemes(phonemes_list):
         phonemes_values_list = []
@@ -68,9 +68,10 @@ def parse_and_index_text():
             phonemes_values_list.append(1)
         return phonemes_values_list
     
-    def build_index():
+    def create_index():
         global INDEX_VERSES
         INDEX_VERSES = {}
+        word_to_phoneme_dict = create_word_to_phoneme_dict()
         with open(RAW_INPUT_TEXT_FILEPATH) as f:
             for line in f:
                 line_split = re.split(r"(?<=[^\w\s])", line)
@@ -78,18 +79,21 @@ def parse_and_index_text():
                 for phrase in line_split:
                     phrase = phrase.strip()
                     if len(phrase.strip()) >= 5 and phrase[-1] in PUNCTUATION_MARKS + ["-", "'", '"', "“"]:
-                        word_list_all = re.split(r"[^\w]", phrase[:-1])
-                        word_list_phonemes = []
-                        phonemes_phrase = []
-                        for word in word_list_all:
-                            phonemes_word = DICT_WORD_TO_PHONEMES.get(word.upper())
-                            if phonemes_word is not None:
-                                phonemes_phrase.extend(phonemes_word)
-                                word_list_phonemes.append(word.upper())
-                        if phonemes_phrase != [] and phrase not in phrase_already_parsed_set:
+                        word_phoneme_list = []
+                        for word in re.split(r"[^\w]", phrase[:-1])[::-1]:
+                            word = word.upper()
+                            if word != "":
+                                word_phoneme_list.append([word, None])
+                        for word_phoneme in word_phoneme_list:
+                            phonemes = word_to_phoneme_dict.get(word_phoneme[0])
+                            if phonemes is not None:
+                                phonemes = phonemes[::-1]
+                            word_phoneme[1] = phonemes
+                        if (
+                            any(wp is not None for wp in word_phoneme_list)
+                            and phrase not in phrase_already_parsed_set
+                        ):
                             phrase_already_parsed_set.add(phrase)
-                            phonemes_phrase_inverted = phonemes_phrase[-1::-1]
-                            phrases_dict_list_for_len = INDEX_VERSES.get(len(phrase), [])
                             if IS_TESTING:
                                 if random.randint(0, 1):
                                     text_sent = ("POS", 0.99)
@@ -101,19 +105,18 @@ def parse_and_index_text():
                             verse_dict = {
                                 "text": phrase,
                                 "text_sent": text_sent,
-                                "word_list_phonemes": word_list_phonemes[-1::-1],
-                                "phonemes": phonemes_phrase_inverted,
-                                # "phonemes_value": [],
+                                "word_phoneme_list": word_phoneme_list,
                             }
                             # verse_dict["phonemes_value"] = create_value_for_phonemes(verse_dict["phonemes"])
+                            phrases_dict_list_for_len = INDEX_VERSES.get(len(phrase), [])
                             phrases_dict_list_for_len.append(verse_dict)
                             INDEX_VERSES[len(phrase)] = phrases_dict_list_for_len
                     
                     # elif IS_TESTING:
                     #     print(f"discard: {phrase}")
     
-    build_word_to_phoneme_dict()
-    build_index()
+    create_word_to_phoneme_dict()
+    create_index()
     
     
 def get_last_word_of_text(text):
@@ -132,40 +135,34 @@ def get_last_word_of_text(text):
     return word, word_i_end
     
     
-def find_matching_verses(verse_length, verse_dict_a):
-    
-    def not_contains_identical_words(word_list_a, word_list_b):
-        limit = 3
-        for i in range(limit):
-            for j in range(limit):
-                if i < len(word_list_a) and j < len(word_list_b) and word_list_a[i] == word_list_b[j]:
-                    return False
-        return True
-    
+def find_matching_verses(verse_length, verse_dict_a, score_count_tmp):
     verse_dict_b_list = []
     for vl in range(verse_length[0], verse_length[1] + 1):
         verse_dict_b_list.extend(INDEX_VERSES[vl])
-    
-    scores_verses_list = []
+    verses_scores_list = []
     for verse_dict_b in verse_dict_b_list:
-        score_limit = 5
-        if not_contains_identical_words(verse_dict_a["word_list_phonemes"], verse_dict_b["word_list_phonemes"]):
-            score = 0
-            phonemes_list_a = verse_dict_a["phonemes"]
-            phonemes_list_b = verse_dict_b["phonemes"]
-            for i in range(score_limit):
-                if i < len(phonemes_list_a) and i < len(phonemes_list_b):
-                    phoneme_a = phonemes_list_a[i]
-                    phoneme_b = phonemes_list_b[i]
+        score_limit = 2.8
+        score = 0
+        i = 1
+        word_phoneme_ab_list = [wp_ab for wp_ab in zip(verse_dict_a["word_phoneme_list"], \
+            verse_dict_b["word_phoneme_list"])]
+        for wp_a, wp_b in word_phoneme_ab_list[:3]:
+            if wp_a[0] != wp_b[0] and abs(len(wp_a[0]) - len(wp_b[0])) < 3 \
+                and wp_a[1] is not None and wp_b[1] is not None:
+                j = i
+                for phoneme_a, phoneme_b in zip(wp_a[1], wp_b[1]):
                     if phoneme_a == phoneme_b:
-                        score += 1
+                        score += j
+                    j /= 2
+            i /= 2
             
-            if score >= score_limit:
-                scores_verses_list.append((verse_dict_b, score))
-            
-    scores_verses_list = sorted(scores_verses_list, key=lambda x: - x[1])
-    if scores_verses_list != []:
-        return scores_verses_list
+        if score >= score_limit:
+            verses_scores_list.append((verse_dict_b, score))
+        count = score_count_tmp.get(score, 0)
+        score_count_tmp[score] = count + 1
+    verses_scores_list = sorted(verses_scores_list, key=lambda x: - x[1])
+    if verses_scores_list != []:
+        return verses_scores_list
     else:
         return None
     
@@ -177,16 +174,16 @@ def create_group(limit, verse_struct, exclusion_words_set):
     for vl in range(verse_length[0], verse_length[1]):
         verses_dict_a_list.extend(INDEX_VERSES[vl])
     random.shuffle(verses_dict_a_list)
-        
     verses_dict_b_list = []
+    score_count_tmp = {}
     for verses_dict_a in verses_dict_a_list:
         if (
             verses_dict_a["text_sent"][0] == verse_struct[0][3]
             and verses_dict_a["text_sent"][1] > 0.9
         ):
             exclusion_words_set_tmp = exclusion_words_set.copy()
-            exclusion_words_set_tmp.add(verses_dict_a["word_list_phonemes"][0])
-            result = find_matching_verses(verse_length, verses_dict_a)
+            exclusion_words_set_tmp.add(verses_dict_a['word_phoneme_list'][0][0])
+            result = find_matching_verses(verse_length, verses_dict_a, score_count_tmp)
             if result is not None and len(result) >= limit - 1:
                 num_found = 1
                 for i in range(limit - 1):
@@ -205,6 +202,9 @@ def create_group(limit, verse_struct, exclusion_words_set):
                     exclusion_words_set = exclusion_words_set_tmp
                     break
     
+    score_count_tmp
+    l = [[k, v] for k, v in score_count_tmp.items()]
+    l = sorted(l, key=lambda x: - x[0])
     return ([verses_dict_a] + verses_dict_b_list, exclusion_words_set)
     
 
@@ -261,19 +261,35 @@ def main():
         return verse_list_all
     
     def persist_poem(verse_list):
-        for verse in verse_list_all:
+        for verse in verse_list:
             with open("../README.md", "a") as f:
                 f.write("\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
                 f.write("```\n")
-                for verse in verse_list_all:
+                for verse in verse_list:
                     f.write(verse + "\n")
                 f.write("```\n")
+                
+    def loop_for_testing():
+        verse_length = [10, 20]
+        while verse_length[1] <= 50:
+            verses_dict_a_list = []
+            for vl in range(verse_length[0], verse_length[1]):
+                verses_dict_a_list.extend(INDEX_VERSES[vl])
+            for verses_dict_a in verses_dict_a_list:
+                verses_scores_list = find_matching_verses(verse_length, verses_dict_a, {})
+                if verses_scores_list is not None:
+                    verses_dict_b, _ = verses_scores_list[0]
+                    print(verses_dict_a["text"])
+                    print(verses_dict_b["text"])
+                    print()
+            print(verse_length)
+            verse_length = [verse_length[0] + 5, verse_length[1] + 5]
         
     set_up()
     create_or_load_index()
-    verse_list_all = create_poem()
-    persist_poem(verse_list_all)
+    loop_for_testing()
+    # verse_list_all = create_poem()
+    # persist_poem(verse_list_all)
 
 if __name__ == "__main__":
     main()
-
