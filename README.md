@@ -1,3 +1,6 @@
+Currently generates poems on Trump Tweets.
+
+Some results:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ```
